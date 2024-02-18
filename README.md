@@ -1,5 +1,3 @@
-
-
 <div align="center">
 <h1>IMD1</h1>
 
@@ -29,6 +27,7 @@ Table of contents
 - [API](#api)
     - [Golang API](#golang-api)
     - [Exposed API](#exposed-api)
+    - [API examples](#api-examples)
 - [Q&A](#qa)
 
 ## Usage
@@ -37,10 +36,10 @@ You should first download/clone this repository:
 
 ```bash
 git clone https://github.com/w1bb/IMD1.git
-cd IMD1
+cd IMD1/src
 ```
 
-Depending on what you're trying to accomplish, you should follow the steps bellow.
+Depending on what you're trying to accomplish, you should follow the steps below.
 
 ### Use as a Golang import
 
@@ -54,13 +53,13 @@ Once you've cloned the project and `cd`-ed into it, build the `.so` library (mak
 make build
 ```
 
-This will create two files, `imd1-lib.so` and `imd1-lib.h`, which can then be used to call some of the _exposed_ functions provided by the library. A list with the API can be found [here](#TODO)
+This will create two files, `libimd1.so` and `libimd1.h`, which can then be used to call some of the _exposed_ functions provided by the library. A list with the API can be found [here](#TODO)
 
 For example, here is a Python snippet that will load the library and call the `C_IMD1_MDFileToHTML` function:
 
 ```python
 import ctypes
-lib = ctypes.cdll.LoadLibrary("./imd1-lib.so")
+lib = ctypes.cdll.LoadLibrary("./libimd1.so")
 lib.C_IMD1_MDFileToHTML.argtypes = [ctypes.c_char_p]
 lib.C_IMD1_MDFileToHTML.restype = ctypes.c_char_p
 html = ctypes.string_at(lib.C_IMD1_MDFileToHTML("input.md".encode('utf-8'))).decode('utf-8')
@@ -120,13 +119,13 @@ Make sure you include **no** spaces between the options, as well as between the 
 
 The code listing allow for the following special options:
 
-- Specify the programming language to be displayed: `[lang=...]`
+- Specify the programming language to be displayed: `[lang=..]`
 
   To write in plain text, this can be set to `text`, `txt`, `plaintext` or nothing at all.
 
-- Specify the file the snippet of code is part of: `[file=...]`
-- Specify the way the code should be aligned `[align=...]`. This will be directly coverted to a tag similar to `<div style="text-align: ...;">`
-- Specify if you want to enable or not a copy button on top of the listing. This has to be implemented separately by the website on which the HTML is rendered. The option is: `[copy=...]`. Use `allow`, `allowed`, `1`, `true`, `ok` or `yes` to enable this option - any other value is considered `disabled`. 
+- Specify the file the snippet of code is part of: `[file=..]`
+- Specify the way the code should be aligned `[align=..]`. This will be directly coverted to a tag similar to `<div style="text-align: ..;">`
+- Specify if you want to enable or not a copy button on top of the listing. This has to be implemented separately by the website on which the HTML is rendered. The option is: `[copy=..]`. Use `allow`, `allowed`, `1`, `true`, `ok` or `yes` to enable this option - any other value is considered `disabled`. 
 
 ### Lists
 
@@ -174,7 +173,35 @@ TODO - the code is complete, docs need to be written
 
 ### Figures and subfigures
 
-TODO - the code is complete, docs need to be written
+The original Markdown format allows for images to be included using the `![alt](link "title")` format. However, IMD1 opts for both an easier to parse and more powerful approach.
+
+You can create **figures** using the `|figure>..<figure|` syntax; these represent collections of **subfigures** (`|subfigure>..<subfigure|`), defined as images with advanced captions. To illustrate this, check out the example below:
+
+```
+|figure>[dock=center]
+|subfigure>[src=/path/to/image]
+This is the caption for this subfigure. It might contain $\LaTeX$ or even
+
+- Lists
+  - And nested lists
+<subfigure|
+<figure|
+```
+
+It is now obvious that both figures and subfigures are customizable using the same syntax described above for code listings.
+
+Figures allow these options:
+
+- Specify if the subfigures (images+captions) will be anchored to the top, the center or the bottom of the structure (figure) as a whole. Use `[dock=..]` with one of the following values: `dock-top` (`top`), `dock-bottom` (`dock-bot`, `bottom`, `bot`) or `center`.
+- Specify a maximum width for the whole structure (figure). Use `[max-width=..]`. This will be directly coverted to a tag similar to `<div style="max-width: ..;">`
+- Specify a global padding for each subfigure that will be applied if the subfigures themselves don't override this option - `[padding=..]`
+
+Subfigures allow these options:
+
+- Specify the source of the image to be rendered using `[src=..]`. This is optional - figures and subfigures could be used in other creative ways, but this is outside of the scope of our discussion.
+- Specify a padding that will override the global padding set by the parent figure. Use `[padding=..]`
+
+Please note that, in order for this to get rendered correctly, some CSS has to be written.
 
 ### Footnotes
 
@@ -249,6 +276,16 @@ Parameters:
 Returns: C string (`char*`)
 
 The function converts an IMD1 string (`c_s`) into a valid HTML file, which is not saved on the disk, but is returned as a C string instead.
+
+### API Examples
+
+You can find a few examples in the [examples](./examples/) folder _(TODO: add more examples)_. Let's explore some of them:
+
+#### 01-hello-world (C example)
+
+The [01-hello-world](./examples/01-hello-world/) gives an example of how a C program can call the IMD1 API using dynamic linking. The most important file in this example is the [Makefile](./examples/01-hello-world/Makefile) - the arguments used when calling `gcc` ensure that the `libimd1.so` library gets loaded correctly at runtime.
+
+If you are experiencing linking issues, you can either use `ldd` or `gcc -Xlinker --verbose` to debug them.
 
 ## Q&A
 

@@ -1,0 +1,769 @@
+/*
+  This file is part of the IMD1 project.
+  Copyright (c) 2024 Valentin-Ioan Vintilă
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, version 3.
+
+  This program is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
+package main
+
+import (
+	"fmt"
+	"reflect"
+
+	log "github.com/sirupsen/logrus"
+)
+
+// =====================================
+// Parsing stack structure
+
+type ParsingStack struct {
+	InsideTextbox uint32
+	InsideParagraph uint32
+}
+
+// =====================================
+// Meta data structure
+
+type MDMetaStructure struct {
+	Author string
+	Copyright string
+}
+
+func (m MDMetaStructure) String() string {
+	return fmt.Sprintf(
+		"Metadata:\n| Author: %v\n| Copyright: %v",
+		m.Author,
+		m.Copyright,
+	)
+}
+
+// =====================================
+// Tree parse
+
+func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
+	parsing_stack := ParsingStack{}
+	current_block := &(Tree[BlockInterface]{})
+	current_block.Value = &BlockDocument{}
+	allowed_inside_block := current_block.Value.GetBlocksAllowedInside()
+
+	just_skipped := INF_BLANKS
+	for i := range(file.Lines) {
+		if file.Lines[i].Empty() {
+			just_skipped++
+			continue
+		}
+		for file.Lines[i].RuneJ < len(file.Lines[i].RuneContent) {
+			if file.Lines[i].RuneJ > 0 {
+				just_skipped = 0
+			}
+			// Check if we can end this block
+			for file.Lines[i].RuneJ < len(file.Lines[i].RuneContent) {
+				should_end_block, should_discard_block, should_discard_seek := current_block.Value.CheckBlockEndsNormally(&file.Lines[i], parsing_stack)
+				if !should_end_block {
+					should_end_block = current_block.Value.CheckBlockEndsViaNewLinesAndIndentation(just_skipped, file.Lines[i].Indentation)
+				}
+				if !should_end_block {
+					break
+				}
+				log.Debugf(
+					"<<< End of %v (line-index=%v, line-j=%v)",
+					current_block.Value,
+					i, file.Lines[i].RuneJ,
+				)
+				
+				switch reflect.TypeOf(current_block.Value) {
+				case reflect.TypeOf(BlockParagraph{}):
+					parsing_stack.InsideParagraph--
+				case reflect.TypeOf(BlockTextbox{}):
+					parsing_stack.InsideTextbox--
+				}
+
+				// Discard if needed
+				if should_discard_block != nil {
+					file.Lines[i].RuneJ += should_discard_seek
+					for reflect.TypeOf(current_block.Value) != reflect.TypeOf(should_discard_block) {
+						fmt.Printf("SOFT Discarding %v (%T != %T)\n", current_block.Value, current_block.Value, should_discard_block)
+						// TODO - remove
+						current_block.Value.ExecuteAfterBlockEnds(&file.Lines[i])
+						current_block = current_block.Parent
+					}
+					file.Lines[i].RuneJ -= should_discard_seek
+				}
+
+				file.Lines[i].RuneJ += current_block.Value.SeekBufferAfterBlockEnds()
+				current_block.Value.ExecuteAfterBlockEnds(&file.Lines[i])
+				current_block = current_block.Parent
+
+				allowed_inside_block = current_block.Value.GetBlocksAllowedInside()
+			}
+			if file.Lines[i].RuneJ >= len(file.Lines[i].RuneContent) {
+				break
+			}
+			// Check if we can open blocks
+			for found := true; found && file.Lines[i].RuneJ < len(file.Lines[i].RuneContent); {
+				found = false
+				for _, allowed := range(allowed_inside_block) {
+					if allowed.CheckBlockStarts(file.Lines[i]) && current_block.Value.AcceptBlockInside(allowed) {
+						file.Lines[i].RuneJ += allowed.SeekBufferAfterBlockStarts()
+						next_block := &(Tree[BlockInterface]{})
+						next_block.Value = allowed
+						next_block.Parent = current_block
+						current_block.Children = append(current_block.Children, next_block)
+						current_block = next_block
+						allowed_inside_block = allowed.GetBlocksAllowedInside()
+						found = true
+						break
+					}
+				}
+				if !found {
+					file.Lines[i].RuneJ++
+				} else {
+					switch reflect.TypeOf(current_block.Value) {
+					case reflect.TypeOf(&BlockParagraph{}):
+						parsing_stack.InsideParagraph++
+					case reflect.TypeOf(&BlockTextbox{}):
+						parsing_stack.InsideTextbox++
+					}
+					current_block.Value.ExecuteAfterBlockStarts(&file.Lines[i])
+					log.Debugf(
+						">>> Beginning of %v (line-index=%v, line-j=%v)",
+						current_block.Value,
+						i, file.Lines[i].RuneJ,
+					)
+				}
+			}
+		}
+		just_skipped = 0
+	}
+
+	// Get back to root
+	for current_block.Parent != nil {
+		switch reflect.TypeOf(current_block.Value) {
+		case reflect.TypeOf(BlockParagraph{}):
+			parsing_stack.InsideParagraph--
+		case reflect.TypeOf(BlockTextbox{}):
+			parsing_stack.InsideTextbox--
+		}
+		current_block.Value.ExecuteAfterBlockEnds(&file.Lines[len(file.Lines) - 1])
+		current_block = current_block.Parent
+	}
+	current_block.Value.GetBlockStruct().ContentEnd = Pair{
+		i: len(file.Lines) - 1,
+		j: len(file.Lines[len(file.Lines) - 1].RuneContent),
+	}
+
+	// Find first non-paragraph 
+	FirstNonParagraph := func (tree *Tree[BlockInterface], min_i int) int {
+		for i := min_i; i < len(tree.Children); i++ {
+			if !tree.Children[i].Value.IsPartOfParagraph() {
+				return i
+			}
+		}
+		return -1
+	}
+
+	// Create the number of detected paragraphs
+	DetectParagraphs := func (before, after Pair, file *FileStruct) []BlockParagraph {
+		var paragraphs []BlockParagraph
+		var current_paragraph string
+
+		for i := before.i; i <= after.i; i++ {
+			var j = 0
+			var max_j = len(file.Lines[i].RuneContent)
+			if i == before.i {
+				j = before.j
+			}
+			if i == after.i {
+				max_j = after.j
+			}
+			current_paragraph += string(file.Lines[i].RuneContent[j:max_j]) + " "
+			if file.Lines[i].Empty() || i == after.i {
+				current_paragraph = RemoveExcessSpaces(current_paragraph)
+				if current_paragraph != "" {
+					end := Pair{i: i}
+					if i == after.i {
+						end.j = after.j
+					}
+					paragraphs = append(paragraphs, BlockParagraph{
+						BlockStruct: BlockStruct{
+							Start: before,
+							End: end,
+							ContentStart: before,
+							ContentEnd: end,
+						},
+					})
+					before = end
+				}
+				current_paragraph = ""
+			}
+		}
+		return paragraphs
+	}
+
+	// Insert paragraphs
+	var InsertParagraphs func (*Tree[BlockInterface])
+	InsertParagraphs = func (tree *Tree[BlockInterface]) {
+
+		// Go deeper (TODO - multithreading)
+		for i := range(tree.Children) {
+			if !tree.Children[i].Value.DigDeeperForParagraphs() {
+				continue;
+			}
+			InsertParagraphs(tree.Children[i])
+		}
+
+		var before, after Pair
+		before = tree.Value.GetBlockStruct().ContentStart
+		
+		starting_i := 0
+		for i := FirstNonParagraph(tree, 0); i != -1; i = FirstNonParagraph(tree, starting_i) {
+			after = tree.Children[i].Value.GetBlockStruct().Start
+			next_before := tree.Children[i].Value.GetBlockStruct().End
+			if p := DetectParagraphs(before, after, &file); p != nil {
+				log.Debug("Detected paragraph between ", before, " and ", after, ": ", p)
+				generated_p := make([]*Tree[BlockInterface], len(p))
+				for j := range(p) {
+					generated_p[j] = new(Tree[BlockInterface])
+					generated_p[j].Parent = tree
+					generated_p[j].Value = &p[j]
+				}
+				for ci, j := starting_i, 0; ci < i && j < len(p); ci++ {
+					for cbs := tree.Children[ci].Value.GetBlockStruct();
+						cbs.Start.i > p[j].ContentEnd.i; j++ {
+					}
+					tree.Children[ci].Parent = generated_p[j]
+					generated_p[j].Children = append(generated_p[j].Children, tree.Children[ci])
+				}
+				// Remove old blocks
+				aux := make([]*Tree[BlockInterface], len(p) + len(tree.Children) - (i - starting_i))
+				copy(aux[:starting_i], tree.Children[:starting_i])
+				copy(aux[starting_i:starting_i+len(p)], generated_p)
+				copy(aux[starting_i+len(p):], tree.Children[i:])
+				tree.Children = aux
+				starting_i += len(p)
+			}
+			starting_i++
+			before = next_before
+		}
+		
+		after = tree.Value.GetBlockStruct().ContentEnd
+		if p := DetectParagraphs(before, after, &file); p != nil {
+			log.Debug("Detected paragraph between ", before, " and ", after, ": ", p)
+			generated_p := make([]*Tree[BlockInterface], len(p))
+			for j := range(p) {
+				generated_p[j] = new(Tree[BlockInterface])
+				generated_p[j].Parent = tree
+				generated_p[j].Value = &p[j]
+			}
+			for ci, j := starting_i, 0; ci < len(tree.Children) && j < len(p); ci++ {
+				for cbs := tree.Children[ci].Value.GetBlockStruct();
+					cbs.Start.i > p[j].ContentEnd.i; j++ {
+				}
+				tree.Children[ci].Parent = generated_p[j]
+				generated_p[j].Children = append(generated_p[j].Children, tree.Children[ci])
+			}
+			// Remove old blocks
+			aux := make([]*Tree[BlockInterface], len(p) + len(tree.Children) - (len(tree.Children) - starting_i))
+			copy(aux[:starting_i], tree.Children[:starting_i])
+			copy(aux[starting_i:starting_i+len(p)], generated_p)
+			copy(aux[starting_i+len(p):], tree.Children[len(tree.Children):])
+			tree.Children = aux
+			starting_i += len(p)
+		}
+	}
+	InsertParagraphs(current_block)
+
+	var md_meta MDMetaStructure
+
+	// Parse paragraphs, raw content, subfigures and meta info
+	var DFSNodeParse func(tree *Tree[BlockInterface])
+	DFSNodeParse = func(tree *Tree[BlockInterface]) {
+		if rc := tree.Value.GetRawContent(); rc != nil && *rc == "" {
+			bs := tree.Value.GetBlockStruct()
+			*rc = file.GetStringBetween(bs.ContentStart, bs.ContentEnd)
+		}
+
+		switch reflect.TypeOf(tree.Value) {
+		case reflect.TypeOf(&BlockParagraph{}):
+			// TODO - could be multithreaded?
+			ParseSingleParagraph(tree, file)
+		case reflect.TypeOf(&BlockSubfigure{}):
+			// Sanity check
+			if reflect.TypeOf(tree.Parent.Value) != reflect.TypeOf(&BlockFigure{}) {
+				panic(nil)
+			}
+			if tree.Value.(*BlockSubfigure).Padding == "" {
+				tree.Value.(*BlockSubfigure).Padding = tree.Parent.Value.(*BlockFigure).Padding
+			}
+		case reflect.TypeOf(&BlockMetaAuthor{}):
+			// Sanity check
+			if reflect.TypeOf(tree.Parent.Value) != reflect.TypeOf(&BlockMeta{}) {
+				panic(nil)
+			}
+			md_meta.Author = *tree.Value.GetRawContent()
+		case reflect.TypeOf(&BlockMetaCopyright{}):
+			// Sanity check
+			if reflect.TypeOf(tree.Parent.Value) != reflect.TypeOf(&BlockMeta{}) {
+				panic(nil)
+			}
+			md_meta.Copyright = *tree.Value.GetRawContent()
+		}
+
+		for i := 0; i < len(tree.Children); i++ {
+			DFSNodeParse(tree.Children[i])
+		}
+	}
+	DFSNodeParse(current_block)
+
+	return *current_block, md_meta
+}
+
+// =====================================
+// Paragraph parse
+
+func ParagraphInsertRawHelper(tree *Tree[BlockInterface], s *string) {
+	if *s != "" {
+		tree.Children = append(tree.Children,
+			&Tree[BlockInterface]{
+				Parent: tree,
+				Value: &BlockInline{
+					Content: &InlineRawString{
+						Content: *s,
+					},
+				},
+			})
+		*s = ""
+	}
+}
+
+func ParseSingleParagraph(tree *Tree[BlockInterface], file FileStruct) {
+	// Insert links
+	link_parsed_tree := ParseSingleParagraphLinks(tree, file)
+	// Insert emphasis
+	emphasis_parsed_tree := ParseSingleBlockInlineEmphasis(link_parsed_tree)
+	// Cleanup
+	cleaned_tree := CleanupSingleBlockInline(emphasis_parsed_tree)
+
+	// Convert heading-paragraph into normal heading
+	tree.Children = []*Tree[BlockInterface]{cleaned_tree}
+	cleaned_tree.Parent = tree
+	if tree.Parent != nil && reflect.TypeOf(tree.Parent.Value) == reflect.TypeOf(&BlockHeading{}) {
+		h := tree.Parent
+		cleaned_tree.Parent = h
+		h.Children = []*Tree[BlockInterface]{cleaned_tree}
+	}
+}
+
+func CleanupSingleBlockInline(content_tree *Tree[BlockInterface]) *Tree[BlockInterface] {
+	cleaned_content_tree := &Tree[BlockInterface]{
+		Parent: content_tree.Parent,
+		Value: &BlockInline{
+			Content: &InlineDocument{
+			},
+		},
+	}
+	for i := 0; i < len(content_tree.Children); i++ {
+		var sr string = ""
+		j := i
+		digging:
+		for ; j < len(content_tree.Children); j++ {
+			if reflect.TypeOf(content_tree.Children[j].Value) != reflect.TypeOf(&BlockInline{}) {
+				break
+			}
+			bjc := content_tree.Children[j].Value.(*BlockInline).Content
+			switch reflect.TypeOf(bjc) {
+			case reflect.TypeOf(&InlineStringDelimiter{}):
+				switch bjc.(*InlineStringDelimiter).TypeOfDelimiter {
+				case UnderlineDelimiter:
+					sr += "_"
+				case AsteriskDelimiter:
+					sr += "*"
+				case TildeDelimiter:
+					sr += "~"
+				case OpenBracketDelimiter:
+					sr += "["
+				case CloseBracketDelimiter:
+					sr += "]"
+				case OpenParantDelimiter:
+					sr += "("
+				case CloseParantDelimiter:
+					sr += ")" // Might never be reached
+				default:
+					panic(nil) // This should never be reached
+				}
+			case reflect.TypeOf(&InlineRawString{}):
+				sr += bjc.(*InlineRawString).Content
+			default:
+				break digging
+			}
+		}
+		if j != i {
+			cleaned_content_tree.Children = append(
+				cleaned_content_tree.Children,
+				&Tree[BlockInterface]{
+					Parent: cleaned_content_tree,
+					Value: &BlockInline{
+						Content: &InlineRawString{
+							Content: sr,
+						},
+					},
+				},
+			)
+		}
+		if j < len(content_tree.Children) {
+			content_tree.Children[j].Parent = cleaned_content_tree
+			cleaned_content_tree.Children = append(
+				cleaned_content_tree.Children,
+				content_tree.Children[j],
+			)
+		}
+		i = j
+	}
+
+	return cleaned_content_tree
+}
+
+func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInterface] {
+	content_tree := &Tree[BlockInterface]{
+		Parent: tree,
+		Value: &BlockInline{
+			Content: &InlineDocument{
+			},
+		},
+	}
+
+	var delimiter_stack Stack[InlineDelimiter]
+	current_string := ""
+	for child_i := 0; ; child_i++ {
+		if child_i == len(tree.Children) {
+			ParagraphInsertRawHelper(content_tree, &current_string)
+			break
+		}
+		tree_child := tree.Children[child_i]
+
+		// Only work with raw strings
+		is_raw := false
+		is_href := false
+		if reflect.TypeOf(tree_child.Value) == reflect.TypeOf(&BlockInline{}) {
+			bic := tree_child.Value.(*BlockInline).Content
+			switch reflect.TypeOf(bic) {
+			case reflect.TypeOf(&InlineRawString{}):
+				is_raw = true
+			case reflect.TypeOf(&InlineHref{}):
+				is_href = true
+			}
+		}
+		
+		if !is_raw {
+			ParagraphInsertRawHelper(content_tree, &current_string)
+			tree_child.Parent = content_tree
+			if is_href {
+				aux := ParseSingleBlockInlineEmphasis(tree_child)
+				for i := 0; i < len(aux.Children); i++ {
+					aux.Children[i].Parent = tree_child
+				}
+				tree_child.Children = aux.Children
+			}
+			content_tree.Children = append(content_tree.Children, tree_child)
+		} else {
+			parsing_now := []rune(tree_child.Value.(*BlockInline).Content.(*InlineRawString).Content)
+			is_escaped := false
+			for c_i := 0; c_i < len(parsing_now); c_i++ {
+				c := parsing_now[c_i]
+				if is_escaped {
+					switch c {
+					case '_', '*', '|', '~', '<', '>', '\\':
+						current_string += string(c)
+					default: // TODO - issue warning for unrecognized characters
+						current_string += string(c)
+					}
+					is_escaped = false
+				} else {
+					switch c {
+					case '_', '*', '~':
+						ParagraphInsertRawHelper(content_tree, &current_string)
+						delim_count := 0
+						for parsing_now[c_i] == c {
+							delim_count++
+							c_i++
+							if c_i >= len(parsing_now) {
+								break
+							}
+						}
+						c_i--
+						var tt InlineDelimiterType
+						switch c {
+						case '_':
+							tt = UnderlineDelimiter
+						case '*':
+							tt = AsteriskDelimiter
+						case '~':
+							tt = TildeDelimiter
+						}
+						for top := delimiter_stack.Top(); top != nil && top.Type == tt && delim_count > 0; top = delimiter_stack.Top() {
+							to_extract := 1
+							if top.Count >= 2 && delim_count >= 2 {
+								to_extract = 2
+							}
+							i := len(content_tree.Children) - 1
+							for ; i >= 0; i-- {
+								ctc := content_tree.Children[i].Value
+								if reflect.TypeOf(ctc) != reflect.TypeOf(&BlockInline{}) {
+									continue
+								}
+								ctcbic := ctc.(*BlockInline).Content
+								if reflect.TypeOf(ctcbic) != reflect.TypeOf(&InlineStringDelimiter{}) {
+									continue
+								}
+								sm := ctcbic.(*InlineStringDelimiter).TypeOfDelimiter
+								if sm != tt {
+									continue
+								}
+								break
+							}
+							if i == -1 {
+								panic(nil) // This should never be reached
+							}
+							// Create string modifier
+							mod := new(InlineStringModifier)
+							if tt == TildeDelimiter {
+								mod.TypeOfModifier = StrikeoutText
+							} else if to_extract == 2 {
+								mod.TypeOfModifier = BoldText
+							} else {
+								mod.TypeOfModifier = ItalicText
+							}
+							mod_tree := &Tree[BlockInterface]{
+								Parent: content_tree,
+								Value: &BlockInline{
+									Content: mod,
+								},
+								Children: make([]*Tree[BlockInterface], len(content_tree.Children) - (i+1)),
+							}
+							for j := 0; j < len(mod_tree.Children); j++ {
+								mod_tree.Children[j] = content_tree.Children[j+i+1]
+								mod_tree.Children[j].Parent = mod_tree
+							}
+							// Remove temp delimiters
+							content_tree.Children = content_tree.Children[:i-(to_extract-1)]
+							// Insert string modifier
+							content_tree.Children = append(content_tree.Children, mod_tree)
+
+							delim_count -= to_extract
+							top.Count -= to_extract
+							if top.Count == 0 {
+								delimiter_stack.Pop()
+							}
+						}
+						if delim_count > 0 {
+							delimiter_stack.Push(InlineDelimiter{
+								Type: tt,
+								Count: delim_count,
+							})
+							for ; delim_count > 0; delim_count-- {
+								content_tree.Children = append(
+									content_tree.Children,
+									&Tree[BlockInterface]{
+										Parent: content_tree,
+										Value: &BlockInline{
+											Content: &InlineStringDelimiter{
+												TypeOfDelimiter: tt,
+											},
+										},
+									})
+							}
+						}
+						case '\\':
+							is_escaped = true
+						default:
+							current_string += string(c)
+					}
+				}
+			}
+		}
+	}
+
+	return content_tree
+}
+
+func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tree[BlockInterface] {
+	p := tree.Value.(*BlockParagraph)
+
+	content_tree := &Tree[BlockInterface]{
+		Parent: tree,
+		Value: &BlockInline{
+			Content: &InlineDocument{
+			},
+		},
+	}
+
+	current_string := ""
+	is_escaped := false
+	stack_level := 0
+	for current, expected_child_i := (Pair{i: p.ContentStart.i, j: p.ContentStart.j-1}), 0;; {
+		current.j++
+		if current.j >= len(file.Lines[current.i].RuneContent) {
+			if current_string != "" && current_string[len(current_string) - 1] != ' ' {
+				current_string += " "
+			}
+			current.j = 0
+			for current.i++; current.i < len(file.Lines) && file.Lines[current.i].Empty(); {
+				current.i++
+			}
+		}
+		if current.i > p.ContentEnd.i || (current.i == p.ContentEnd.i && current.j >= p.ContentEnd.j) {
+			ParagraphInsertRawHelper(content_tree, &current_string)
+			break
+		}
+
+		is_part_of_other_child := false
+		if expected_child_i < len(tree.Children) {
+			cbs := tree.Children[expected_child_i].Value.GetBlockStruct()
+			if current.i == cbs.Start.i && current.j == cbs.Start.j {
+				is_part_of_other_child = true
+			}
+		}
+		
+		if is_part_of_other_child {
+			ParagraphInsertRawHelper(content_tree, &current_string)
+			tree_child := tree.Children[expected_child_i]
+			tree_child.Parent = content_tree
+			content_tree.Children = append(content_tree.Children, tree_child)
+			current = tree.Children[expected_child_i].Value.GetBlockStruct().End
+			current.j--
+			expected_child_i++
+			if stack_level == 3 {
+				stack_level = 0
+			}
+		} else {
+			c := file.Lines[current.i].RuneContent[current.j]
+			if is_escaped {
+				switch c {
+				case '_', '*', '|', '~', '<', '>', '\\':
+					current_string += string(c)
+				default: // TODO - issue warning for unrecognized characters
+					current_string += string(c)
+				}
+				is_escaped = false
+			} else {
+				switch c {
+				case '[':
+					ParagraphInsertRawHelper(content_tree, &current_string)
+					stack_level = 1
+					content_tree.Children = append(
+						content_tree.Children,
+						&Tree[BlockInterface]{
+							Parent: content_tree,
+							Value: &BlockInline{
+								Content: &InlineStringDelimiter{
+									TypeOfDelimiter: OpenBracketDelimiter,
+								},
+							},
+						})
+				case ']':
+					if stack_level == 1 {
+						stack_level = 2
+					} else {
+						stack_level = 0
+					}
+					ParagraphInsertRawHelper(content_tree, &current_string)
+					content_tree.Children = append(
+						content_tree.Children,
+						&Tree[BlockInterface]{
+							Parent: content_tree,
+							Value: &BlockInline{
+								Content: &InlineStringDelimiter{
+									TypeOfDelimiter: CloseBracketDelimiter,
+								},
+							},
+						})
+				case '(':
+					if stack_level == 2 {
+						stack_level = 3
+					} else {
+						stack_level = 0
+					}
+					ParagraphInsertRawHelper(content_tree, &current_string)
+					content_tree.Children = append(
+						content_tree.Children,
+						&Tree[BlockInterface]{
+							Parent: content_tree,
+							Value: &BlockInline{
+								Content: &InlineStringDelimiter{
+									TypeOfDelimiter: OpenParantDelimiter,
+								},
+							},
+						})
+				case ')':
+					if stack_level == 3 {
+						i := len(content_tree.Children) - 1
+						for ; i >= 0; i-- {
+							ctc := content_tree.Children[i].Value
+							if reflect.TypeOf(ctc) != reflect.TypeOf(&BlockInline{}) {
+								continue
+							}
+							ctcbic := ctc.(*BlockInline).Content
+							if reflect.TypeOf(ctcbic) != reflect.TypeOf(&InlineStringDelimiter{}) {
+								continue
+							}
+							sm := ctcbic.(*InlineStringDelimiter).TypeOfDelimiter
+							if sm != OpenBracketDelimiter {
+								continue
+							}
+							break
+						}
+						if i == -1 {
+							panic(nil) // This should never be reached
+						}
+						a := new(InlineHref)
+						a.Address = current_string
+						a_tree := &Tree[BlockInterface]{
+							Parent: content_tree,
+							Value: &BlockInline{
+								Content: a,
+							},
+							Children: make([]*Tree[BlockInterface], len(content_tree.Children) - (i+1) - 2),
+						}
+						for j := 0; j < len(a_tree.Children); j++ {
+							a_tree.Children[j] = content_tree.Children[j+i+1]
+							a_tree.Children[j].Parent = a_tree
+						}
+						// Remove temp delimiters
+						content_tree.Children = content_tree.Children[:i]
+						// Insert string modifier
+						content_tree.Children = append(content_tree.Children, a_tree)
+						
+						current_string = ""
+					} else {
+						current_string += ")"
+					}
+					stack_level = 0
+				default:
+					if stack_level == 2 {
+						stack_level = 0
+					} else if stack_level == 3 && c == ' ' {
+						stack_level = 0
+					}
+					if c == '\\' {
+						is_escaped = true
+					} else {
+						current_string += string(c)
+					}
+				}
+			}
+		}
+	}
+
+	return content_tree
+}
