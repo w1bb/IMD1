@@ -20,6 +20,8 @@ package main
 import (
 	"fmt"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // =====================================
@@ -61,7 +63,7 @@ func (b *BlockHeading) GetHTMLHeadingLevel() int {
 	if hl > 6 {
 		hl = 6
 	} else if hl < 1 {
-		hl = 0 // This should never be reached, but just in case
+		hl = 1 // This should never be reached, but just in case
 	}
 	return hl
 }
@@ -224,6 +226,23 @@ func (b *BlockUlLi) GenerateHTMLTagSuffix() string {
 // =====================================
 // Ordered list HTML interface
 
+func (t BlockOlType) HTMLType() string {
+	switch t {
+	case OlType_1:
+		return "1"
+	case OlType_A:
+		return "A"
+	case OlType_a:
+		return "a"
+	case OlType_I:
+		return "I"
+	case OlType_i:
+		return "i"
+	default:
+		panic(nil) // This should never be reached
+	}
+}
+
 func (b *BlockOl) GenerateHTMLTagPrefix() string {
 	return fmt.Sprintf(
 		"<ol type=\"%v\">\n",
@@ -334,6 +353,9 @@ func (b *BlockRef) GenerateHTMLTagSuffix() string {
 // Reference HTML interface
 
 func (b *BlockBibliography) GenerateHTMLTagPrefix() string {
+	if b.HTMLContent == nil {
+		panic(nil)
+	}
 	return *b.HTMLContent
 }
 
@@ -367,7 +389,7 @@ func (b *InlineDocument) GenerateHTMLTagSuffix() string {
 // Raw string HTML interface
 
 func (b *InlineRawString) GenerateHTMLTagPrefix() string {
-	return StringToHTMLSafe(b.Content) // b.Content // TODO - sanitize
+	return StringToHTMLSafe(b.Content)
 }
 
 func (b *InlineRawString) GenerateHTMLTagSuffix() string {
@@ -408,10 +430,8 @@ func (b *InlineStringModifier) GenerateHTMLTagSuffix() string {
 
 func (b *InlineStringDelimiter) GenerateHTMLTagPrefix() string {
 	// Warn the user that something kind of went wrong
-	return fmt.Sprintf(
-		"%v<!-- WARNING: InlineStringDelimiter -->",
-		b.String(),
-	)
+	log.Warnf("When generating the HTML, there should be no leftover InlineStringDelimiter (%v). This is a bug and should be reported!", b)
+	return b.String()
 }
 
 func (b *InlineStringDelimiter) GenerateHTMLTagSuffix() string {
@@ -422,7 +442,6 @@ func (b *InlineStringDelimiter) GenerateHTMLTagSuffix() string {
 // Href HTML interface
 
 func (b *InlineHref) GenerateHTMLTagPrefix() string {
-	// Warn the user that something kind of went wrong
 	return fmt.Sprintf("<a href=\"%v\">", b.Address)
 }
 

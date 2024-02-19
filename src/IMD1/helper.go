@@ -176,3 +176,20 @@ func StringToHTMLSafe(s string) string {
 	}
 	return sb.String()
 }
+
+func StringToLaTeXSafe(s string) string {
+	var sb strings.Builder
+	for _, c := range s {
+		switch c {
+		case '\\':
+			sb.WriteString("\\\\")
+		case '{':
+			sb.WriteString("\\{")
+		case '}':
+			sb.WriteString("\\}")
+		default:
+			sb.WriteRune(c)
+		}
+	}
+	return sb.String()
+}

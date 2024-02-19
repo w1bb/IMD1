@@ -115,3 +115,94 @@ func C_IMD1_MDToHTML(c_s *C.char) *C.char {
 	html := IMD1_MDToHTML(s)
 	return C.CString(html)
 }
+
+// =====================================
+// Markdown to LaTeX (Go)
+
+func IMD1_MDToLaTeXHelper(file FileStruct) string {
+	start_time := time.Now()
+	tree, metadata := file.MDParse()
+	end_time := time.Now()
+	log.Infof("Parsing took %v", end_time.Sub(start_time))
+	log.Debug(tree)
+	log.Debug(metadata)
+
+	start_time = time.Now()
+	latex := GenerateLaTeX(&tree)
+	end_time = time.Now()
+	log.Infof("Generating the LaTeX took %v", end_time.Sub(start_time))
+	return latex
+}
+
+func IMD1_MDFileToLaTeXFile(md_filename string, latex_filename string) {
+	var file FileStruct
+	file.ReadFile(md_filename)
+
+	latex := IMD1_MDToLaTeXHelper(file)
+
+	fout, err := os.Create(latex_filename)
+	if err != nil {
+		panic(err)
+	}
+	fout.WriteString(latex)
+	fout.Close()
+}
+
+func IMD1_MDToLaTeXFile(s string, latex_filename string) {
+	var file FileStruct
+	file.ReadString(s)
+
+	latex := IMD1_MDToLaTeXHelper(file)
+
+	fout, err := os.Create(latex_filename)
+	if err != nil {
+		panic(err)
+	}
+	fout.WriteString(latex)
+	fout.Close()
+}
+
+func IMD1_MDFileToLaTeX(md_filename string) string {
+	var file FileStruct
+	file.ReadFile(md_filename)
+
+	return IMD1_MDToLaTeXHelper(file)
+}
+
+func IMD1_MDToLaTeX(s string) string {
+	var file FileStruct
+	file.ReadString(s)
+	
+	return IMD1_MDToLaTeXHelper(file)
+}
+
+// =====================================
+// Markdown to LaTeX (C-exported variants)
+
+//export C_IMD1_MDFileToLaTeXFile
+func C_IMD1_MDFileToLaTeXFile(c_md_filename *C.char, c_latex_filename *C.char) {
+	md_filename := C.GoString(c_md_filename)
+	latex_filename := C.GoString(c_latex_filename)
+	IMD1_MDFileToLaTeXFile(md_filename, latex_filename)
+}
+
+//export C_IMD1_MDToLaTeXFile
+func C_IMD1_MDToLaTeXFile(c_s *C.char, c_latex_filename *C.char) {
+	s := C.GoString(c_s)
+	latex_filename := C.GoString(c_latex_filename)
+	IMD1_MDToLaTeXFile(s, latex_filename)
+}
+
+//export C_IMD1_MDFileToLaTeX
+func C_IMD1_MDFileToLaTeX(c_md_filename *C.char) *C.char {
+	md_filename := C.GoString(c_md_filename)
+	latex := IMD1_MDFileToLaTeX(md_filename)
+	return C.CString(latex)
+}
+
+//export C_IMD1_MDToLaTeX
+func C_IMD1_MDToLaTeX(c_s *C.char) *C.char {
+	s := C.GoString(c_s)
+	latex := IMD1_MDToLaTeX(s)
+	return C.CString(latex)
+}

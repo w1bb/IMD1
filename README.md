@@ -3,13 +3,13 @@
 
 ![version](https://img.shields.io/badge/version-0.6-orange?style=flat)
 [![License](https://img.shields.io/badge/license-GPL--3.0-red?style=flat)](/LICENSE)
-![docs](https://img.shields.io/badge/docs-40%25-blueviolet?style=flat)
+![docs](https://img.shields.io/badge/docs-50%25-blueviolet?style=flat)
 ![stars](https://img.shields.io/github/stars/w1bb/IMD1)
 
 </div>
 <br />
 
-**IMD1** (to be read as _"I am The One"_) is both a very customizable Markdown-like specification and a Go implementation custom tailored for it.
+**IMD1** (to be read as _"I am The One"_) is both a very customizable Markdown-like specification and a Go implementation custom tailored for it that can convert from **IMD1** to both **HTML** and **LaTeX**.
 
 This project is **by no means complete** - it is a work in progress, kept alive only by my passion for great article-writing software.
 
@@ -107,12 +107,12 @@ Equations can be written in various ways, including:
 - Inline math equations:
 
     - `\(..\)` equations, e.g. `\(i=\sqrt{-1}\)`
-    - `$..$` equations, e.g. `$f(x)=e^x$` (when outputed to HTML, they will get converted to the `\(..\)` format instead)
+    - `$..$` equations, e.g. `$f(x)=e^x$` (when outputed to HTML, they will get converted to the `\(..\)` format instead; this is not the case for LaTeX)
 
 - Display math equations
 
     - `\[..\]` equations, e.g. `\[\frac{x}{23}=\int_0^1\sin t\,dt\]`
-    - `$$..$$` equations, e.g. `$$x^{x^x}=\pi$$` (when outputed to HTML, they will get converted to the `\[..\]` format instead)
+    - `$$..$$` equations, e.g. `$$x^{x^x}=\pi$$` (when outputed to HTML, they will get converted to the `\[..\]` format instead; this is not the case for LaTeX)
     - `\begin{equation}..\end{equation}`
     - `\begin{align}..\end{align}`
 
@@ -138,7 +138,7 @@ The code listing allow for the following special options:
 
 - Specify the file the snippet of code is part of: `[file=..]`
 - Specify the way the code should be aligned `[align=..]`. This will be directly coverted to a tag similar to `<div style="text-align: ..;">`
-- Specify if you want to enable or not a copy button on top of the listing. This has to be implemented separately by the website on which the HTML is rendered. The option is: `[copy=..]`. Use `allow`, `allowed`, `1`, `true`, `ok` or `yes` to enable this option - any other value is considered `disabled`. 
+- Specify if you want to enable or not a copy button on top of the listing. This has to be implemented separately by the website on which the HTML is rendered. The option is: `[copy=..]`. Use `allow`, `allowed`, `1`, `true`, `ok` or `yes` to enable this option - any other value is considered `disabled`. This option has no effect in LaTeX.
 
 ### Lists
 
@@ -384,6 +384,56 @@ Parameters:
 Returns: C string (`char*`)
 
 The function converts an IMD1 string (`c_s`) into a valid HTML file, which is not saved on the disk, but is returned as a C string instead.
+
+#### C_IMD1_MDFileToLaTeXFile
+
+It is the exposed variant of `IMD1_MDFileToLaTeXFile`.
+
+Parameters:
+
+- `c_md_filename` - C string (`char*`)
+- `c_latex_filename` - C string (`char*`)
+
+Returns: nothing (`void`)
+
+The function converts an IMD1 file (located at `c_md_filename`) into a LaTeX file (located at `c_latex_filename`).
+
+#### C_IMD1_MDToLaTeXFile
+
+It is the exposed variant of `IMD1_MDToLaTeXFile`.
+
+Parameters:
+
+- `c_s` - C string (`char*`)
+- `c_latex_filename` - C string (`char*`)
+
+Returns: nothing (`void`)
+
+The function converts an IMD1 string (`c_s`) into a LaTeX file (located at `c_latex_filename`).
+
+#### C_IMD1_MDFileToLaTeX
+
+It is the exposed variant of `IMD1_MDFileToLaTeX`.
+
+Parameters:
+
+- `c_md_filename` - C string (`char*`)
+
+Returns: C string (`char*`)
+
+The function converts an IMD1 file (located at `c_md_filename`) into a valid LaTeX file, which is not saved on the disk, but is returned as a C string instead.
+
+#### C_IMD1_MDToLaTeX
+
+It is the exposed variant of `IMD1_MDToLaTeX`.
+
+Parameters:
+
+- `c_s` - C string (`char*`)
+
+Returns: C string (`char*`)
+
+The function converts an IMD1 string (`c_s`) into a valid LaTeX file, which is not saved on the disk, but is returned as a C string instead.
 
 ### API Examples
 

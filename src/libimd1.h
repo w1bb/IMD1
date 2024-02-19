@@ -78,6 +78,10 @@ extern void C_IMD1_MDFileToHTMLFile(char* c_md_filename, char* c_html_filename);
 extern void C_IMD1_MDToHTMLFile(char* c_s, char* c_html_filename);
 extern char* C_IMD1_MDFileToHTML(char* c_md_filename);
 extern char* C_IMD1_MDToHTML(char* c_s);
+extern void C_IMD1_MDFileToLaTeXFile(char* c_md_filename, char* c_latex_filename);
+extern void C_IMD1_MDToLaTeXFile(char* c_s, char* c_latex_filename);
+extern char* C_IMD1_MDFileToLaTeX(char* c_md_filename);
+extern char* C_IMD1_MDToLaTeX(char* c_s);
 
 #ifdef __cplusplus
 }

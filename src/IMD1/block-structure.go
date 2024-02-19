@@ -45,7 +45,10 @@ func (b BlockStruct) Empty() bool {
 
 type BlockInterface interface {
 	fmt.Stringer
+
 	HTMLInterface
+	LaTeXInterface
+	
 	CheckBlockStarts(line LineStruct) bool
 	SeekBufferAfterBlockStarts() int
 	ExecuteAfterBlockStarts(line *LineStruct)
@@ -1214,23 +1217,6 @@ func (t BlockOlType) String() string {
 	}
 }
 
-func (t BlockOlType) HTMLType() string {
-	switch t {
-	case OlType_1:
-		return "1"
-	case OlType_A:
-		return "A"
-	case OlType_a:
-		return "a"
-	case OlType_I:
-		return "I"
-	case OlType_i:
-		return "i"
-	default:
-		panic(nil) // This should never be reached
-	}
-}
-
 type BlockOl struct {
 	BlockStruct
 	Indentation uint16
@@ -1854,12 +1840,22 @@ func (b *BlockRef) GetRawContent() *string {
 type BlockBibliography struct {
 	BlockStruct
 	HTMLContent *string
+	LaTeXContent *string
 }
 
 func (b BlockBibliography) String() string {
+	hc := "<nil>"
+	if b.HTMLContent != nil {
+		hc = *b.HTMLContent
+	}
+	lc := "<nil>"
+	if b.LaTeXContent != nil {
+		lc = *b.LaTeXContent
+	}
 	return fmt.Sprintf(
-		"BlockBibliography (html-content=%v), %v",
-		*b.HTMLContent,
+		"BlockBibliography (html-content=%v, latex-content=%v), %v",
+		hc,
+		lc,
 		b.BlockStruct.String(),
 	)
 }

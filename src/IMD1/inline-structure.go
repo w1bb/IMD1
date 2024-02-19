@@ -24,7 +24,9 @@ import "fmt"
 
 type InlineInterface interface {
 	fmt.Stringer
+
 	HTMLInterface
+	LaTeXInterface
 
 	GetRawContent() *string
 }
