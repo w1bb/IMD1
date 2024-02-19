@@ -314,14 +314,31 @@ func (b *BlockFootnote) GenerateHTMLTagSuffix() string {
 // Reference HTML interface
 
 func (b *BlockRef) GenerateHTMLTagPrefix() string {
+	s := "[?]"
+	if b.ReferenceIndex >= 1 {
+		s = fmt.Sprintf("[%v]", b.ReferenceIndex)
+	}
 	return fmt.Sprintf(
-		"<a href=\"#\" class=\"reference-href\">[%v]",
+		"<a href=\"%v#ref-%v\" class=\"reference-href\">%v",
+		b.File,
 		b.ReferenceIndex,
+		s,
 	)
 }
 
 func (b *BlockRef) GenerateHTMLTagSuffix() string {
 	return "</a>\n"
+}
+
+// =====================================
+// Reference HTML interface
+
+func (b *BlockBibliography) GenerateHTMLTagPrefix() string {
+	return *b.HTMLContent
+}
+
+func (b *BlockBibliography) GenerateHTMLTagSuffix() string {
+	return ""
 }
 
 // =====================================
@@ -443,6 +460,17 @@ func (b *BlockMetaCopyright) GenerateHTMLTagPrefix() string {
 }
 
 func (b *BlockMetaCopyright) GenerateHTMLTagSuffix() string {
+	return ""
+}
+
+// =====================================
+// Meta (bibliography) HTML interfaces (ignore them)
+
+func (b *BlockMetaBibinfo) GenerateHTMLTagPrefix() string {
+	return ""
+}
+
+func (b *BlockMetaBibinfo) GenerateHTMLTagSuffix() string {
 	return ""
 }
 

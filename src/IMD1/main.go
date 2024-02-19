@@ -25,6 +25,6 @@ import (
 // Main itself, for sunny days
 
 func main() {
-	SetupLog(/*log.DebugLevel*/ log.InfoLevel)
+	SetupLog(log.DebugLevel /*log.InfoLevel*/)
 	IMD1_MDFileToHTMLFile("input.md", "output.html")
 }

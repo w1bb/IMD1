@@ -3,7 +3,7 @@
 
 ![version](https://img.shields.io/badge/version-0.6-orange?style=flat)
 [![License](https://img.shields.io/badge/license-GPL--3.0-red?style=flat)](/LICENSE)
-![docs](https://img.shields.io/badge/docs-30%25-blueviolet?style=flat)
+![docs](https://img.shields.io/badge/docs-40%25-blueviolet?style=flat)
 ![stars](https://img.shields.io/github/stars/w1bb/IMD1)
 
 </div>
@@ -24,6 +24,16 @@ Table of contents
     - [Use as a Golang import](#use-as-a-golang-import)
     - [Use as a standalone library](#use-as-a-standalone-library)
 - [The specification](#the-specification)
+    - [Headings and paragraphs](#headings-and-paragraphs)
+    - [Inline text modifiers](#inline-text-modifiers)
+    - [Math support](#math-support)
+    - [Code listings](#code-listings)
+    - [Lists](#lists)
+    - [Textboxes](#textboxes)
+    - [Figures and subfigures](#figures-and-subfigures)
+    - [Footnotes](#footnotes)
+    - [Bibliography](#bibliography)
+    - [Metadata](#metadata)
 - [API](#api)
     - [Golang API](#golang-api)
     - [Exposed API](#exposed-api)

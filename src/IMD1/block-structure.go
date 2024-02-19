@@ -119,6 +119,7 @@ func (b BlockDocument) GetBlocksAllowedInside() []BlockInterface {
 		&BlockRef{},
 		&BlockHeading{},
 		&BlockMeta{},
+		&BlockBibliography{},
 	}
 }
 
@@ -1848,6 +1849,88 @@ func (b *BlockRef) GetRawContent() *string {
 }
 
 // =====================================
+// Bibliography info
+
+type BlockBibliography struct {
+	BlockStruct
+	HTMLContent *string
+}
+
+func (b BlockBibliography) String() string {
+	return fmt.Sprintf(
+		"BlockBibliography (html-content=%v), %v",
+		*b.HTMLContent,
+		b.BlockStruct.String(),
+	)
+}
+
+func (b *BlockBibliography) CheckBlockStarts(line LineStruct) bool {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|bibliography>")
+}
+
+func (b BlockBibliography) SeekBufferAfterBlockStarts() int {
+	return 1
+}
+
+func (b *BlockBibliography) ExecuteAfterBlockStarts(line *LineStruct) {
+	b.Start = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ - 14,
+	}
+	b.ContentStart = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+}
+
+func (b *BlockBibliography) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<bibliography|"), nil, 0
+}
+
+func (b BlockBibliography) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+	return false
+}
+
+func (b *BlockBibliography) ExecuteAfterBlockEnds(line *LineStruct) {
+	b.End = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+	b.ContentEnd = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ - 14,
+	}
+}
+
+func (b BlockBibliography) SeekBufferAfterBlockEnds() int {
+	return 1
+}
+
+func (b BlockBibliography) GetBlocksAllowedInside() []BlockInterface {
+	return nil
+}
+
+func (b BlockBibliography) AcceptBlockInside(other BlockInterface) bool {
+	return false // irrelevant
+}
+
+func (b BlockBibliography) IsPartOfParagraph() bool {
+	return false
+}
+
+func (b BlockBibliography) DigDeeperForParagraphs() bool {
+	return false
+}
+
+func (b *BlockBibliography) GetBlockStruct() *BlockStruct {
+	return &b.BlockStruct
+}
+
+func (b *BlockBibliography) GetRawContent() *string {
+	return nil
+}
+
+// =====================================
 // Meta info
 
 type BlockMeta struct {
@@ -1907,6 +1990,7 @@ func (b BlockMeta) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockMetaAuthor{},
 		&BlockMetaCopyright{},
+		&BlockMetaBibinfo{},
 	}
 }
 
@@ -2013,7 +2097,7 @@ func (b *BlockMetaAuthor) GetRawContent() *string {
 }
 
 // =====================================
-// Meta info - author
+// Meta info - copyright
 
 type BlockMetaCopyright struct {
 	BlockStruct
@@ -2091,6 +2175,94 @@ func (b *BlockMetaCopyright) GetBlockStruct() *BlockStruct {
 }
 
 func (b *BlockMetaCopyright) GetRawContent() *string {
+	return &b.RawContent
+}
+
+// =====================================
+// Meta info - bibliography
+
+type BlockMetaBibinfo struct {
+	BlockStruct
+	RawContent string
+	JSONInline bool
+}
+
+func (b BlockMetaBibinfo) String() string {
+	return fmt.Sprintf(
+		"BlockMetaBibinfo (inline=%v), %v :: \"%v\"",
+		b.JSONInline,
+		b.BlockStruct.String(),
+		b.RawContent,
+	)
+}
+
+func (b *BlockMetaBibinfo) CheckBlockStarts(line LineStruct) bool {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|bibinfo>")
+}
+
+func (b BlockMetaBibinfo) SeekBufferAfterBlockStarts() int {
+	return 1
+}
+
+func (b *BlockMetaBibinfo) ExecuteAfterBlockStarts(line *LineStruct) {
+	b.Start = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ - 9,
+	}
+	options := GatherBlockOptions(line, []string{"inline"})
+	if value, ok := options["inline"]; ok {
+		b.JSONInline = Contains([]string{"allow", "allowed", "1", "true", "ok", "yes"}, value)
+	}
+	b.ContentStart = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+}
+
+func (b *BlockMetaBibinfo) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<bibinfo|"), nil, 0
+}
+
+func (b BlockMetaBibinfo) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+	return false
+}
+
+func (b *BlockMetaBibinfo) ExecuteAfterBlockEnds(line *LineStruct) {
+	b.End = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+	b.ContentEnd = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ - 9,
+	}
+}
+
+func (b BlockMetaBibinfo) SeekBufferAfterBlockEnds() int {
+	return 1
+}
+
+func (b BlockMetaBibinfo) GetBlocksAllowedInside() []BlockInterface {
+	return nil
+}
+
+func (b BlockMetaBibinfo) AcceptBlockInside(other BlockInterface) bool {
+	return false // irrelevant
+}
+
+func (b BlockMetaBibinfo) IsPartOfParagraph() bool {
+	return false
+}
+
+func (b BlockMetaBibinfo) DigDeeperForParagraphs() bool {
+	return false
+}
+
+func (b *BlockMetaBibinfo) GetBlockStruct() *BlockStruct {
+	return &b.BlockStruct
+}
+
+func (b *BlockMetaBibinfo) GetRawContent() *string {
 	return &b.RawContent
 }
 
