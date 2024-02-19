@@ -28,6 +28,7 @@ Table of contents
     - [Inline text modifiers](#inline-text-modifiers)
     - [Math support](#math-support)
     - [Code listings](#code-listings)
+    - [HTML and LaTeX](#html-and-latex)
     - [Lists](#lists)
     - [Textboxes](#textboxes)
     - [Figures and subfigures](#figures-and-subfigures)
@@ -139,6 +140,12 @@ The code listing allow for the following special options:
 - Specify the file the snippet of code is part of: `[file=..]`
 - Specify the way the code should be aligned `[align=..]`. This will be directly coverted to a tag similar to `<div style="text-align: ..;">`
 - Specify if you want to enable or not a copy button on top of the listing. This has to be implemented separately by the website on which the HTML is rendered. The option is: `[copy=..]`. Use `allow`, `allowed`, `1`, `true`, `ok` or `yes` to enable this option - any other value is considered `disabled`. This option has no effect in LaTeX.
+
+### HTML and LaTeX
+
+You can write HTML and LaTeX directly inside the document. When compiling into HTML, the LaTeX tags will be ignored and vice-versa.
+
+To insert some HTML, use the `|html>..<html|` tag. To insert LaTeX, use `|latex>..<latex|`.
 
 ### Lists
 

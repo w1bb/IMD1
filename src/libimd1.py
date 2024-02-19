@@ -87,7 +87,7 @@ def Py_IMD1_MDToLaTeX(py_s):
 # Testing
 
 # html = Py_IMD1_MDFileToHTML("input.md")
-html = Py_IMD1_MDToLaTeX("Hello **world**")
+# html = Py_IMD1_MDToLaTeX("Hello **world**")
 # Py_IMD1_MDToHTMLFile("Hello **world**", "test.html")
 # Py_IMD1_MDFileToHTMLFile("t.md", "test.html")
-print(html)
+# print(html)
