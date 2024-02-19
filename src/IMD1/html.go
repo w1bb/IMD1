@@ -29,6 +29,7 @@ import (
 
 type HTMLInterface interface {
 	fmt.Stringer
+	
 	GenerateHTMLTagPrefix() string
 	GenerateHTMLTagSuffix() string
 }
