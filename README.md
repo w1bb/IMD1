@@ -213,17 +213,110 @@ Subfigures allow these options:
 
 Please note that, in order for this to get rendered correctly, some CSS has to be written.
 
+### Tabs
+
+TODO - incomplete
+
 ### Footnotes
-
-TODO - the code is complete, docs need to be written
-
-### Bibliography
 
 TODO - the code is complete, docs need to be written
 
 ### Metadata
 
 TODO - the code is complete, docs need to be written
+
+### Bibliography
+
+You can write a bibliography for your files based on a JSON file. It's structure should be similar to the following example:
+
+```json
+{
+    "bibliography": [
+        {
+            "tag": "test-tag-1",
+            "type": "article",
+            "data": {
+                "title": "Article title 1",
+                "author": "Article author 2"
+            }
+        },
+        {
+            "tag": "test-tag-2",
+            "type": "article",
+            "data": {
+                "title": "Article title 2",
+                "author": "Article author 2"
+            }
+        }
+    ]
+}
+```
+
+As you can see, every entry is contained in this file. Each entry must contain a **tag** that will later be used when referencing your work. Currently, the following types of entries are allowed:
+
+- `article`
+- `book`
+- `other` (`unknown`)
+
+The "data" section can contain any number of:
+
+- `title` (if missing, the tag will be considered the title)
+- `author`
+- `journal`
+- `volume`
+- `number`
+- `pages`
+- `year`
+- `publisher`
+- `url`
+
+You can include a bibliography JSON file using `|bibinfo>/path/to/json<bibinfo|` - please note that `|bibinfo>` can only be part of the `|meta>..<meta|` tag (see [Metadata](#metadata)).
+
+You can also include an inline bibliography file (meaning you can directly paste the contents of the JSON file in the tag itself) by specifing the option `[inline=true]`. Multiple `|bibinfo>` tags are allowed in the same document and they will be processed in the order they are written.
+
+To reference the bibliography, you can use the `|ref>..<ref|` tag. Make sure to specify a valid tag. The "ref" can precede the the "bibinfo" and it will still be rendered correctly (the `|bibinfo>` tags get processed before the `|ref>` ones).
+
+Here is an example of valid bibliography
+
+```
+|meta>|bibinfo>[inline=true]
+{
+    "bibliography": [
+        {
+            "tag": "tag-1",
+            "type": "article",
+            "data": {
+                "title": "Article title 1",
+                "author": "Article author 1"
+            }
+        }
+    ]
+}
+<bibinfo||bibinfo>[inline=true]
+{
+    "bibliography": [
+        {
+            "tag": "tag-2",
+            "type": "article",
+            "data": {
+                "title": "Article title 2",
+                "author": "Article author 2"
+            }
+        },
+        {
+            "tag": "tag-2",
+            "type": "article",
+            "data": {
+                "title": "Article title 2",
+                "author": "Article author 2"
+            }
+        }
+    ]
+}
+<bibinfo|<meta|
+
+The reference |ref>tag-1<ref| is valid, and so is |ref>tag-2<ref| (however, the compiler will trigger a warning). But |ref>hello<ref| is invalid and will be converted to [?].
+```
 
 ## API
 
