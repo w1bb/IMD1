@@ -128,12 +128,23 @@ func (b *BlockCodeListing) GenerateHTMLTagSuffix() string {
 // =====================================
 // HTML HTML interface
 
-func (b *BlockHtml) GenerateHTMLTagPrefix() string {
+func (b *BlockHTML) GenerateHTMLTagPrefix() string {
 	return b.RawContent
 }
 
-func (b *BlockHtml) GenerateHTMLTagSuffix() string {
+func (b *BlockHTML) GenerateHTMLTagSuffix() string {
 	return ""
+}
+
+// =====================================
+// LaTeX HTML interface (ignored)
+
+func (b *BlockLaTeX) GenerateHTMLTagPrefix() string {
+	return "" // Obviously ignored
+}
+
+func (b *BlockLaTeX) GenerateHTMLTagSuffix() string {
+	return "" // Obviously ignored
 }
 
 // =====================================

@@ -100,12 +100,23 @@ func (b *BlockCodeListing) GenerateLaTeXTagSuffix() string {
 // =====================================
 // HTML LaTeX interface (ignored)
 
-func (b *BlockHtml) GenerateLaTeXTagPrefix() string {
+func (b *BlockHTML) GenerateLaTeXTagPrefix() string {
 	return "" // Obviously ignored
 }
 
-func (b *BlockHtml) GenerateLaTeXTagSuffix() string {
+func (b *BlockHTML) GenerateLaTeXTagSuffix() string {
 	return "" // Obviously ignored
+}
+
+// =====================================
+// LaTeX LaTeX interface
+
+func (b *BlockLaTeX) GenerateLaTeXTagPrefix() string {
+	return b.RawContent
+}
+
+func (b *BlockLaTeX) GenerateLaTeXTagSuffix() string {
+	return ""
 }
 
 // =====================================

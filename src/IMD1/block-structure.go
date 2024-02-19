@@ -48,7 +48,7 @@ type BlockInterface interface {
 
 	HTMLInterface
 	LaTeXInterface
-	
+
 	CheckBlockStarts(line LineStruct) bool
 	SeekBufferAfterBlockStarts() int
 	ExecuteAfterBlockStarts(line *LineStruct)
@@ -109,7 +109,8 @@ func (b *BlockDocument) ExecuteAfterBlockEnds(line *LineStruct) {
 
 func (b BlockDocument) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
-		&BlockHtml{},
+		&BlockHTML{},
+		&BlockLaTeX{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
@@ -284,7 +285,8 @@ func (b BlockHeading) SeekBufferAfterBlockEnds() int {
 
 func (b BlockHeading) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
-		&BlockHtml{},
+		&BlockHTML{},
+		&BlockLaTeX{},
 		&BlockInlineCodeListing{},
 		&BlockInlineMath{},
 		&BlockFootnote{},
@@ -384,7 +386,8 @@ func (b BlockTextbox) SeekBufferAfterBlockEnds() int {
 
 func (b BlockTextbox) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
-		&BlockHtml{},
+		&BlockHTML{},
+		&BlockLaTeX{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
@@ -421,28 +424,28 @@ func (b *BlockTextbox) GetRawContent() *string {
 // =====================================
 // HTML code
 
-type BlockHtml struct {
+type BlockHTML struct {
 	BlockStruct
 	RawContent string
 }
 
-func (b BlockHtml) String() string {
+func (b BlockHTML) String() string {
 	return fmt.Sprintf(
-		"BlockHtml, %v :: \"%v\"",
+		"BlockHTML, %v :: \"%v\"",
 		b.BlockStruct.String(),
 		b.RawContent,
 	)
 }
 
-func (b *BlockHtml) CheckBlockStarts(line LineStruct) bool {
+func (b *BlockHTML) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|html>")
 }
 
-func (b BlockHtml) SeekBufferAfterBlockStarts() int {
+func (b BlockHTML) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
-func (b *BlockHtml) ExecuteAfterBlockStarts(line *LineStruct) {
+func (b *BlockHTML) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = Pair{
 		i: line.LineIndex,
 		j: line.RuneJ - 6,
@@ -453,15 +456,15 @@ func (b *BlockHtml) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockHtml) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockHTML) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<html|"), nil, 0
 }
 
-func (b BlockHtml) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b BlockHTML) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
 	return false
 }
 
-func (b *BlockHtml) ExecuteAfterBlockEnds(line *LineStruct) {
+func (b *BlockHTML) ExecuteAfterBlockEnds(line *LineStruct) {
 	b.End = Pair{
 		i: line.LineIndex,
 		j: line.RuneJ,
@@ -472,31 +475,113 @@ func (b *BlockHtml) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockHtml) SeekBufferAfterBlockEnds() int {
+func (b BlockHTML) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockHtml) GetBlocksAllowedInside() []BlockInterface {
+func (b BlockHTML) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockHtml) AcceptBlockInside(other BlockInterface) bool {
+func (b BlockHTML) AcceptBlockInside(other BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockHtml) IsPartOfParagraph() bool {
+func (b BlockHTML) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockHtml) DigDeeperForParagraphs() bool {
+func (b BlockHTML) DigDeeperForParagraphs() bool {
 	return false
 }
 
-func (b *BlockHtml) GetBlockStruct() *BlockStruct {
+func (b *BlockHTML) GetBlockStruct() *BlockStruct {
 	return &b.BlockStruct
 }
 
-func (b *BlockHtml) GetRawContent() *string {
+func (b *BlockHTML) GetRawContent() *string {
+	return &b.RawContent
+}
+
+// =====================================
+// HTML code
+
+type BlockLaTeX struct {
+	BlockStruct
+	RawContent string
+}
+
+func (b BlockLaTeX) String() string {
+	return fmt.Sprintf(
+		"BlockLaTeX, %v :: \"%v\"",
+		b.BlockStruct.String(),
+		b.RawContent,
+	)
+}
+
+func (b *BlockLaTeX) CheckBlockStarts(line LineStruct) bool {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|latex>")
+}
+
+func (b BlockLaTeX) SeekBufferAfterBlockStarts() int {
+	return 1
+}
+
+func (b *BlockLaTeX) ExecuteAfterBlockStarts(line *LineStruct) {
+	b.Start = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ - 7,
+	}
+	b.ContentStart = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+}
+
+func (b *BlockLaTeX) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<latex|"), nil, 0
+}
+
+func (b BlockLaTeX) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+	return false
+}
+
+func (b *BlockLaTeX) ExecuteAfterBlockEnds(line *LineStruct) {
+	b.End = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+	b.ContentEnd = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ - 7,
+	}
+}
+
+func (b BlockLaTeX) SeekBufferAfterBlockEnds() int {
+	return 1
+}
+
+func (b BlockLaTeX) GetBlocksAllowedInside() []BlockInterface {
+	return nil
+}
+
+func (b BlockLaTeX) AcceptBlockInside(other BlockInterface) bool {
+	return false // irrelevant
+}
+
+func (b BlockLaTeX) IsPartOfParagraph() bool {
+	return false
+}
+
+func (b BlockLaTeX) DigDeeperForParagraphs() bool {
+	return false
+}
+
+func (b *BlockLaTeX) GetBlockStruct() *BlockStruct {
+	return &b.BlockStruct
+}
+
+func (b *BlockLaTeX) GetRawContent() *string {
 	return &b.RawContent
 }
 
@@ -1153,7 +1238,8 @@ func (b BlockUlLi) SeekBufferAfterBlockEnds() int {
 
 func (b BlockUlLi) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
-		&BlockHtml{},
+		&BlockHTML{},
+		&BlockLaTeX{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
@@ -1409,7 +1495,8 @@ func (b BlockOlLi) SeekBufferAfterBlockEnds() int {
 
 func (b BlockOlLi) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
-		&BlockHtml{},
+		&BlockHTML{},
+		&BlockLaTeX{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
@@ -1530,7 +1617,8 @@ func (b BlockFigure) SeekBufferAfterBlockEnds() int {
 
 func (b BlockFigure) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
-		&BlockHtml{},
+		&BlockHTML{},
+		&BlockLaTeX{},
 		&BlockSubfigure{},
 	}
 }
@@ -1624,7 +1712,8 @@ func (b BlockSubfigure) SeekBufferAfterBlockEnds() int {
 
 func (b BlockSubfigure) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
-		&BlockHtml{},
+		&BlockHTML{},
+		&BlockLaTeX{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
@@ -1714,7 +1803,8 @@ func (b BlockFootnote) SeekBufferAfterBlockEnds() int {
 
 func (b BlockFootnote) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
-		&BlockHtml{},
+		&BlockHTML{},
+		&BlockLaTeX{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
