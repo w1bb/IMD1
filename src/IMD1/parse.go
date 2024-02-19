@@ -305,7 +305,6 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 
 		switch reflect.TypeOf(tree.Value) {
 		case reflect.TypeOf(&BlockParagraph{}):
-			// TODO - could be multithreaded?
 			ParseSingleParagraph(tree, file)
 		case reflect.TypeOf(&BlockSubfigure{}):
 			// Sanity check
@@ -813,8 +812,12 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 					switch c {
 					case '_', '*', '|', '~', '<', '>', '\\':
 						current_string += string(c)
-					default: // TODO - issue warning for unrecognized characters
-						current_string += string(c)
+					default:
+						log.Warnf(
+							"Unrecognized escape sequence \"\\%v\". Please use \"\\\\%v\" instead. The sequence will be treated as \"\\\\%v\"...",
+							c, c, c,
+						)
+						current_string += "\\" + string(c)
 					}
 					is_escaped = false
 				} else {
@@ -980,8 +983,12 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 				switch c {
 				case '_', '*', '|', '~', '<', '>', '\\':
 					current_string += string(c)
-				default: // TODO - issue warning for unrecognized characters
-					current_string += string(c)
+				default:
+					log.Warnf(
+						"Unrecognized escape sequence \"\\%v\". Please use \"\\\\%v\" instead. The sequence will be treated as \"\\\\%v\"...",
+						c, c, c,
+					)
+					current_string += "\\" + string(c)
 				}
 				is_escaped = false
 			} else {

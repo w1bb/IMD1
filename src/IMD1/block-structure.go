@@ -20,6 +20,8 @@ package main
 import (
 	"fmt"
 	"reflect"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // =====================================
@@ -1578,10 +1580,14 @@ func (b *BlockFigure) ExecuteAfterBlockStarts(line *LineStruct) {
 		case "bot", "bottom", "dock-bot", "dock-bottom":
 			b.Dock = "dock-bottom"
 		case "center":
+			// skip
 		default:
-			// TODO - trigger warning
+			log.Warnf(
+				"A figure cannot have \"dock\" set to \"%v\". Resetting it do default (\"%v\")",
+				value,
+				"center",
+			)
 		}
-		b.Dock = value
 	}
 	if value, ok := options["padding"]; ok {
 		b.Padding = value
