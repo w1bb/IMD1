@@ -89,11 +89,11 @@ This document **will NOT** be detail-oriented. The only reason the specification
 
 ### Headings and paragraphs
 
-Headings and paragraphs work similarly to the original Markdown format. However, headings can only be written using the `#` character, such as `## Heading 2`. This is by design, since the other format is not only confusing for the reader, but it is also complicated to implement.
+**Headings** and **paragraphs** work similarly to the original Markdown format. However, headings can only be written using the `#` character, such as `## Heading 2`. This is by design, since the other format is not only confusing for the reader, but it is also complicated to implement.
 
 ### Inline text modifiers
 
-The OG Markdown text modifiers have also suffered some changes. Whilst both `*` and `_` can be used in almost the same way, the _exceptions_ which were ambiguous without looking up the Commonmark documentation have been removed. Now, these operators work using a simple stack where only the last inserted element can be read. It is now obvious that the infamous `_*hello_*` will **not** produce "_*hello*_", but will generate "\_\*hello\_\*" instead.
+The OG Markdown **text modifiers** have also suffered some changes. Whilst both `*` and `_` can be used in almost the same way, the _exceptions_ which were ambiguous without looking up the Commonmark documentation have been removed. Now, these operators work using a simple stack where only the last inserted element can be read. It is now obvious that the infamous `_*hello_*` will **not** produce "_*hello*_", but will generate "\_\*hello\_\*" instead.
 
 There is also no difference between `_` and `*`, they both behave in a similar way to how the `*` operator behaved in vanilla Markdown. However, as I've already examplified, they cannot be interchanged.
 
@@ -101,7 +101,7 @@ A new modifier has also been introduced, the strikeout operator, `~`. For exampl
 
 ### Math support
 
-The IMD1 format supports math equations by design, without altering their content during compilation. The implementation expects a 3rd party library, such as [KaTeX](https://github.com/KaTeX/KaTeX), to handle the way math equations are displayed on the screen.
+The IMD1 format supports **math equations** by design, without altering their content during compilation. The implementation expects a 3rd party library, such as [KaTeX](https://github.com/KaTeX/KaTeX), to handle the way math equations are displayed on the screen.
 
 Equations can be written in various ways, including:
 
@@ -119,7 +119,7 @@ Equations can be written in various ways, including:
 
 ### Code listings
 
-Inline code can easily be insered using the \` operator. The difference between Markdown and IMD1 is visible when handling multiple lines of code. For this purpose, the \`\`\` operator has been modified to allow for special options. These have to be written using the `[option=value]` format, right after the \`\`\` operator, as in:
+**Inline code** can easily be insered using the \` operator. The difference between Markdown and IMD1 is visible when handling **multiple lines of code**. For this purpose, the \`\`\` operator has been modified to allow for special options. These have to be written using the `[option=value]` format, right after the \`\`\` operator, as in:
 
 ~~~
 ```[option1=value1][option2=value2]
@@ -143,13 +143,13 @@ The code listing allow for the following special options:
 
 ### HTML and LaTeX
 
-You can write HTML and LaTeX directly inside the document. When compiling into HTML, the LaTeX tags will be ignored and vice-versa.
+You can write **HTML** and **LaTeX** directly inside the document. When compiling into HTML, the LaTeX tags will be ignored and vice-versa.
 
 To insert some HTML, use the `|html>..<html|` tag. To insert LaTeX, use `|latex>..<latex|`.
 
 ### Lists
 
-Unordered lists can be created using the `-` character, found at the beginning of the line (possibly prefixed by an indentation). To continue using the same list item, the following non-empty lines have to be prefixed by the same indentation plus two characters. For example:
+**Unordered lists** can be created using the `-` character, found at the beginning of the line (possibly prefixed by an indentation). To continue using the same list item, the following non-empty lines have to be prefixed by the same indentation plus two characters. For example:
 
 ```
 - First line
@@ -177,7 +177,7 @@ Here is a more complex example:
 
 The example above will be converted **the way you intended it to be converted**, not in a seemingly random pattern designed for compilers instead of humans.
 
-Ordered lists can be used as well. These can be created using the `1.`, `A.`, `a.`, `I.` and `i.` characters at the beginning of the line (possibly prefixed by an indentation). To keep using the same list item, the following non-empty lines have to be preffixed by the same indentation plus three characters. For example:
+**Ordered lists** can be used as well. These can be created using the `1.`, `A.`, `a.`, `I.` and `i.` characters at the beginning of the line (possibly prefixed by an indentation). To keep using the same list item, the following non-empty lines have to be preffixed by the same indentation plus three characters. For example:
 
 ```
 1. Element
@@ -189,7 +189,13 @@ Ordered lists can be used as well. These can be created using the `1.`, `A.`, `a
 
 ### Textboxes
 
-TODO - the code is complete, docs need to be written
+A **textbox** is meant to be a colored box that contains both a title and some content. These can be used to differentiate between normal text and some crucial piece of information, a warning or an otherwise important message.
+
+In IMD1, you can generate a textbox using the `|textbox>..<textbox|` tag. You can then specify what kind of textbox you want using the `[class=..]` option. The standard (recommended) values are `tip`, `note`, `warning`, `error`, and `admonition`.
+
+You will now be able to specify a title (`|title>..<title|`) and some content (`|content>..<content|`).
+
+_Note: Previous versions did not use the `|title>` and `|content>` tags. Instead, you had to specify the title using the `[title=..]` option. The reason this was changed is because you could only insert unformatable text for the title due to the way options are parsed by the compiler._
 
 ### Figures and subfigures
 
@@ -237,7 +243,7 @@ TODO - the code is complete, docs need to be written
 
 ### Bibliography
 
-You can write a bibliography for your files based on a JSON file. It's structure should be similar to the following example:
+You can write a **bibliography** for your files based on a JSON file. It's structure should be similar to the following example:
 
 ```json
 {
@@ -284,7 +290,7 @@ You can include a bibliography JSON file using `|bibinfo>/path/to/json<bibinfo|`
 
 You can also include an inline bibliography file (meaning you can directly paste the contents of the JSON file in the tag itself) by specifing the option `[inline=true]`. Multiple `|bibinfo>` tags are allowed in the same document and they will be processed in the order they are written.
 
-To reference the bibliography, you can use the `|ref>..<ref|` tag. Make sure to specify a valid tag. The "ref" can precede the the "bibinfo" and it will still be rendered correctly (the `|bibinfo>` tags get processed before the `|ref>` ones).
+To **reference** the bibliography, you can use the `|ref>..<ref|` tag. Make sure to specify a valid tag. The "ref" can precede the the "bibinfo" and it will still be rendered correctly (the `|bibinfo>` tags get processed before the `|ref>` ones).
 
 Here is an example of valid bibliography
 

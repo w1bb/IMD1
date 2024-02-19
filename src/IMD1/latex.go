@@ -29,7 +29,7 @@ import (
 
 type LaTeXInterface interface {
 	fmt.Stringer
-	
+
 	GenerateLaTeXTagPrefix() string
 	GenerateLaTeXTagSuffix() string
 }
@@ -101,6 +101,28 @@ func (b *BlockTextbox) GenerateLaTeXTagPrefix() string {
 }
 
 func (b *BlockTextbox) GenerateLaTeXTagSuffix() string {
+	return "}"
+}
+
+// =====================================
+// Textbox title LaTeX interface
+
+func (b *BlockTextboxTitle) GenerateLaTeXTagPrefix() string {
+	return "{" // TODO
+}
+
+func (b *BlockTextboxTitle) GenerateLaTeXTagSuffix() string {
+	return "}"
+}
+
+// =====================================
+// Textbox content LaTeX interface
+
+func (b *BlockTextboxContent) GenerateLaTeXTagPrefix() string {
+	return "{" // TODO
+}
+
+func (b *BlockTextboxContent) GenerateLaTeXTagSuffix() string {
 	return "}"
 }
 

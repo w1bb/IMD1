@@ -29,7 +29,7 @@ import (
 
 type HTMLInterface interface {
 	fmt.Stringer
-	
+
 	GenerateHTMLTagPrefix() string
 	GenerateHTMLTagSuffix() string
 }
@@ -81,15 +81,40 @@ func (b *BlockHeading) GenerateHTMLTagSuffix() string {
 // Textbox HTML interface
 
 func (b *BlockTextbox) GenerateHTMLTagPrefix() string {
+	c := ""
+	if b.Class != "" {
+		c = " " + b.Class
+	}
 	return fmt.Sprintf(
-		"<div class=\"box %v\"><div class=\"box-title\">%v</div><div class=\"box-content\">\n",
-		b.Class,
-		b.Title,
+		"<div class=\"box%v\">\n",
+		c,
 	)
 }
 
 func (b *BlockTextbox) GenerateHTMLTagSuffix() string {
-	return "</div></div>\n"
+	return "</div>\n"
+}
+
+// =====================================
+// Textbox title HTML interface
+
+func (b *BlockTextboxTitle) GenerateHTMLTagPrefix() string {
+	return "<div class=\"box-title\">"
+}
+
+func (b *BlockTextboxTitle) GenerateHTMLTagSuffix() string {
+	return "</div>\n"
+}
+
+// =====================================
+// Textbox content HTML interface
+
+func (b *BlockTextboxContent) GenerateHTMLTagPrefix() string {
+	return "<div class=\"box-content\">"
+}
+
+func (b *BlockTextboxContent) GenerateHTMLTagSuffix() string {
+	return "</div>\n"
 }
 
 // =====================================

@@ -322,14 +322,12 @@ func (b *BlockHeading) GetRawContent() *string {
 type BlockTextbox struct {
 	BlockStruct
 	Class string
-	Title string
 }
 
 func (b BlockTextbox) String() string {
 	return fmt.Sprintf(
-		"BlockTextbox (class=%v, title=\"%v\"), %v",
+		"BlockTextbox (class=%v), %v",
 		b.Class,
-		b.Title,
 		b.BlockStruct.String(),
 	)
 }
@@ -350,12 +348,9 @@ func (b *BlockTextbox) ExecuteAfterBlockStarts(line *LineStruct) {
 		i: line.LineIndex,
 		j: line.RuneJ - 9,
 	}
-	options := GatherBlockOptions(line, []string{"class", "title"})
+	options := GatherBlockOptions(line, []string{"class"})
 	if value, ok := options["class"]; ok {
 		b.Class = value
-	}
-	if value, ok := options["title"]; ok {
-		b.Title = value
 	}
 	b.ContentStart = Pair{
 		i: line.LineIndex,
@@ -388,18 +383,8 @@ func (b BlockTextbox) SeekBufferAfterBlockEnds() int {
 
 func (b BlockTextbox) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
-		&BlockHTML{},
-		&BlockLaTeX{},
-		&BlockCodeListing{},
-		&BlockInlineCodeListing{},
-		&BlockMath{},
-		&BlockInlineMath{},
-		&BlockTextbox{},
-		&BlockFigure{},
-		&BlockUl{},
-		&BlockOl{},
-		&BlockFootnote{},
-		&BlockRef{},
+		&BlockTextboxTitle{},
+		&BlockTextboxContent{},
 	}
 }
 
@@ -420,6 +405,186 @@ func (b *BlockTextbox) GetBlockStruct() *BlockStruct {
 }
 
 func (b *BlockTextbox) GetRawContent() *string {
+	return nil
+}
+
+// =====================================
+// Textbox title
+
+type BlockTextboxTitle struct {
+	BlockStruct
+}
+
+func (b BlockTextboxTitle) String() string {
+	return fmt.Sprintf(
+		"BlockTextboxTitle, %v",
+		b.BlockStruct.String(),
+	)
+}
+
+func (b *BlockTextboxTitle) CheckBlockStarts(line LineStruct) bool {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|title>")
+}
+
+func (b BlockTextboxTitle) SeekBufferAfterBlockStarts() int {
+	return 1
+}
+
+func (b *BlockTextboxTitle) ExecuteAfterBlockStarts(line *LineStruct) {
+	b.Start = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ - 7,
+	}
+	b.ContentStart = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+}
+
+func (b *BlockTextboxTitle) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<title|"), nil, 0
+}
+
+func (b BlockTextboxTitle) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+	return false
+}
+
+func (b *BlockTextboxTitle) ExecuteAfterBlockEnds(line *LineStruct) {
+	b.End = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+	b.ContentEnd = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ - 7,
+	}
+}
+
+func (b BlockTextboxTitle) SeekBufferAfterBlockEnds() int {
+	return 1
+}
+
+func (b BlockTextboxTitle) GetBlocksAllowedInside() []BlockInterface {
+	return []BlockInterface {
+		&BlockHTML{},
+		&BlockLaTeX{},
+		&BlockInlineCodeListing{},
+		&BlockInlineMath{},
+		&BlockFootnote{},
+		&BlockRef{},
+	}
+}
+
+func (b BlockTextboxTitle) AcceptBlockInside(other BlockInterface) bool {
+	return true
+}
+
+func (b BlockTextboxTitle) IsPartOfParagraph() bool {
+	return false
+}
+
+func (b BlockTextboxTitle) DigDeeperForParagraphs() bool {
+	return true
+}
+
+func (b *BlockTextboxTitle) GetBlockStruct() *BlockStruct {
+	return &b.BlockStruct
+}
+
+func (b *BlockTextboxTitle) GetRawContent() *string {
+	return nil
+}
+
+// =====================================
+// Textbox
+
+type BlockTextboxContent struct {
+	BlockStruct
+}
+
+func (b BlockTextboxContent) String() string {
+	return fmt.Sprintf(
+		"BlockTextboxContent, %v",
+		b.BlockStruct.String(),
+	)
+}
+
+func (b *BlockTextboxContent) CheckBlockStarts(line LineStruct) bool {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|content>")
+}
+
+func (b BlockTextboxContent) SeekBufferAfterBlockStarts() int {
+	return 1
+}
+
+func (b *BlockTextboxContent) ExecuteAfterBlockStarts(line *LineStruct) {
+	b.Start = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ - 9,
+	}
+	b.ContentStart = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+}
+
+func (b *BlockTextboxContent) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<content|"), nil, 0
+}
+
+func (b BlockTextboxContent) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+	return false
+}
+
+func (b *BlockTextboxContent) ExecuteAfterBlockEnds(line *LineStruct) {
+	b.End = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+	b.ContentEnd = Pair{
+		i: line.LineIndex,
+		j: line.RuneJ - 9,
+	}
+}
+
+func (b BlockTextboxContent) SeekBufferAfterBlockEnds() int {
+	return 1
+}
+
+func (b BlockTextboxContent) GetBlocksAllowedInside() []BlockInterface {
+	return []BlockInterface {
+		&BlockHTML{},
+		&BlockLaTeX{},
+		&BlockCodeListing{},
+		&BlockInlineCodeListing{},
+		&BlockMath{},
+		&BlockInlineMath{},
+		&BlockTextbox{},
+		&BlockFigure{},
+		&BlockUl{},
+		&BlockOl{},
+		&BlockFootnote{},
+		&BlockRef{},
+	}
+}
+
+func (b BlockTextboxContent) AcceptBlockInside(other BlockInterface) bool {
+	return true
+}
+
+func (b BlockTextboxContent) IsPartOfParagraph() bool {
+	return false
+}
+
+func (b BlockTextboxContent) DigDeeperForParagraphs() bool {
+	return true
+}
+
+func (b *BlockTextboxContent) GetBlockStruct() *BlockStruct {
+	return &b.BlockStruct
+}
+
+func (b *BlockTextboxContent) GetRawContent() *string {
 	return nil
 }
 

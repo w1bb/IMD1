@@ -682,10 +682,11 @@ func ParseSingleParagraph(tree *Tree[BlockInterface], file FileStruct) {
 	// Cleanup
 	cleaned_tree := CleanupSingleBlockInline(emphasis_parsed_tree)
 
-	// Convert heading-paragraph into normal heading
+	// Convert heading-paragraph -> normal heading
+	//         textbox title-paragraph into normal textbox title
 	tree.Children = []*Tree[BlockInterface]{cleaned_tree}
 	cleaned_tree.Parent = tree
-	if tree.Parent != nil && reflect.TypeOf(tree.Parent.Value) == reflect.TypeOf(&BlockHeading{}) {
+	if tree.Parent != nil && (reflect.TypeOf(tree.Parent.Value) == reflect.TypeOf(&BlockHeading{}) || reflect.TypeOf(tree.Parent.Value) == reflect.TypeOf(&BlockTextboxTitle{})) {
 		h := tree.Parent
 		cleaned_tree.Parent = h
 		h.Children = []*Tree[BlockInterface]{cleaned_tree}
