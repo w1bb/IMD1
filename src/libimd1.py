@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # This file is part of the IMD1 project.
 # Copyright (c) 2024 Valentin-Ioan Vintilă
 
@@ -17,6 +19,18 @@ import ctypes
 
 imd1_lib_so = ctypes.cdll.LoadLibrary("./libimd1.so")
 
+imd1_lib_so.C_IMD1_MDFileToHTMLFile.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+def Py_IMD1_MDFileToHTMLFile(py_md_filename, py_html_filename):
+    c_md_filename = py_md_filename.encode('utf-8')
+    c_html_filename = py_html_filename.encode('utf-8')
+    imd1_lib_so.C_IMD1_MDFileToHTMLFile(c_md_filename, c_html_filename)
+
+imd1_lib_so.C_IMD1_MDToHTMLFile.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+def Py_IMD1_MDToHTMLFile(py_s, py_html_filename):
+    c_s = py_s.encode('utf-8')
+    c_html_filename = py_html_filename.encode('utf-8')
+    imd1_lib_so.C_IMD1_MDToHTMLFile(c_s, c_html_filename)
+
 imd1_lib_so.C_IMD1_MDFileToHTML.argtypes = [ctypes.c_char_p]
 imd1_lib_so.C_IMD1_MDFileToHTML.restype = ctypes.c_char_p
 def Py_IMD1_MDFileToHTML(py_md_filename):
@@ -24,6 +38,15 @@ def Py_IMD1_MDFileToHTML(py_md_filename):
     c_ret = imd1_lib_so.C_IMD1_MDFileToHTML(c_md_filename)
     return ctypes.string_at(c_ret).decode('utf-8')
 
+imd1_lib_so.C_IMD1_MDToHTML.argtypes = [ctypes.c_char_p]
+imd1_lib_so.C_IMD1_MDToHTML.restype = ctypes.c_char_p
+def Py_IMD1_MDToHTML(py_s):
+    c_s = py_s.encode('utf-8')
+    c_ret = imd1_lib_so.C_IMD1_MDToHTML(c_s)
+    return ctypes.string_at(c_ret).decode('utf-8')
 
-html = Py_IMD1_MDFileToHTML("input.md")
-print(html)
+# html = Py_IMD1_MDFileToHTML("input.md")
+# html = Py_IMD1_MDToHTML("Hello **world**")
+# Py_IMD1_MDToHTMLFile("Hello **world**", "test.html")
+# Py_IMD1_MDFileToHTMLFile("t.md", "test.html")
+# print(html)

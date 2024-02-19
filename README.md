@@ -31,9 +31,10 @@ Table of contents
     - [Lists](#lists)
     - [Textboxes](#textboxes)
     - [Figures and subfigures](#figures-and-subfigures)
+    - [Tabs](#tabs)
     - [Footnotes](#footnotes)
-    - [Bibliography](#bibliography)
     - [Metadata](#metadata)
+    - [Bibliography](#bibliography)
 - [API](#api)
     - [Golang API](#golang-api)
     - [Exposed API](#exposed-api)
@@ -77,7 +78,9 @@ html = ctypes.string_at(lib.C_IMD1_MDFileToHTML("input.md".encode('utf-8'))).dec
 
 As you can tell, strings have to be converted to C "strings" (char pointers) before passing them to the API. The return value also needs to be converted from a C char pointer to a Python string.
 
-Obviously, using C instead of Python would simplify this process a lot.
+A file containing the Python variants [exists](./src/libimd1.py) within the repository and shall be used to aid development.
+
+Obviously, using C instead of Python would simplify this "translation" process a lot. However, linking errors may arise. Check out the [examples](#api-examples) for more details.
 
 ## The specification
 
@@ -329,6 +332,8 @@ TODO
 As I've already [stated above](#use-as-a-standalone-library), some of the functions have been exposed as C variants that can be called outside of Golang.
 
 As a quick note, they all start with `C_IMD1_`. Generally, a function called `C_IMD1_XYZ` will represent the exposed variant of the Golang function `IMD1_XYZ`.
+
+There is also a Python wrapper that calls these exposed functions. Check out the [libimd1.py](./src/libimd1.py) file for additional information.
 
 #### C_IMD1_MDFileToHTMLFile
 
