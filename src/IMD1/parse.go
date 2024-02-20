@@ -1008,9 +1008,6 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 			current = tree.Children[expected_child_i].Value.GetBlockStruct().End
 			current.j--
 			expected_child_i++
-			// if stack_level == 3 {
-			// 	stack_level = 0
-			// }
 
 			switch PDM_State {
 			case PDM_LinkState_Start, PDM_LinkState_Text_Last_Sq_Bracket, PDM_LinkState_Text_Last_Space:
@@ -1062,19 +1059,6 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 					default:
 						panic(nil) // This should never be reached!
 					}
-					
-					// ParagraphInsertRawHelper(content_tree, &current_string)
-					// stack_level = 1
-					// content_tree.Children = append(
-					// 	content_tree.Children,
-					// 	&Tree[BlockInterface]{
-					// 		Parent: content_tree,
-					// 		Value: &BlockInline{
-					// 			Content: &InlineStringDelimiter{
-					// 				TypeOfDelimiter: OpenBracketDelimiter,
-					// 			},
-					// 		},
-					// 	})
 				case ']':
 					switch PDM_State {
 					case PDM_LinkState_Start, PDM_LinkState_Text_Last_Sq_Bracket, PDM_LinkState_Text_Last_Space:
@@ -1093,24 +1077,6 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 					default:
 						panic(nil) // This should never be reached!
 					}
-
-					// if stack_level == 1 {
-					// 	stack_level = 2
-					// } else {
-					// 	stack_level = 0
-					// }
-					// ParagraphInsertRawHelper(content_tree, &current_string)
-					// content_tree.Children = append(
-					// 	content_tree.Children,
-					// 	&Tree[BlockInterface]{
-					// 		Parent: content_tree,
-					// 		Value: &BlockInline{
-					// 			Content: &InlineStringDelimiter{
-					// 				TypeOfDelimiter: CloseBracketDelimiter,
-					// 			},
-					// 		},
-					// 	})
-
 				case ' ':
 					switch PDM_State {
 					case PDM_LinkState_Start, PDM_LinkState_Text_Last_Sq_Bracket, PDM_LinkState_Text_Last_Space, PDM_LinkState_Link:
@@ -1134,23 +1100,6 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 						panic(nil) // This should never be reached!
 					}
 					current_string += "("
-
-					// if stack_level == 2 {
-					// 	stack_level = 3
-					// } else {
-					// 	stack_level = 0
-					// }
-					// ParagraphInsertRawHelper(content_tree, &current_string)
-					// content_tree.Children = append(
-					// 	content_tree.Children,
-					// 	&Tree[BlockInterface]{
-					// 		Parent: content_tree,
-					// 		Value: &BlockInline{
-					// 			Content: &InlineStringDelimiter{
-					// 				TypeOfDelimiter: OpenParantDelimiter,
-					// 			},
-					// 		},
-					// 	})
 				case ')':
 					switch PDM_State {
 					case PDM_LinkState_Start, PDM_LinkState_Text_Last_Space, PDM_LinkState_Text_Last_Sq_Bracket:
@@ -1194,62 +1143,16 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 					} else {
 						current_string += ")"
 					}
-					
-					// if stack_level == 3 {
-					// 	i := len(content_tree.Children) - 1
-					// 	for ; i >= 0; i-- {
-					// 		ctc := content_tree.Children[i].Value
-					// 		if reflect.TypeOf(ctc) != reflect.TypeOf(&BlockInline{}) {
-					// 			continue
-					// 		}
-					// 		ctcbic := ctc.(*BlockInline).Content
-					// 		if reflect.TypeOf(ctcbic) != reflect.TypeOf(&InlineStringDelimiter{}) {
-					// 			continue
-					// 		}
-					// 		sm := ctcbic.(*InlineStringDelimiter).TypeOfDelimiter
-					// 		if sm != OpenBracketDelimiter {
-					// 			continue
-					// 		}
-					// 		break
-					// 	}
-					// 	if i == -1 {
-					// 		panic(nil) // This should never be reached
-					// 	}
-					// 	a := new(InlineHref)
-					// 	a.Address = current_string
-					// 	a_tree := &Tree[BlockInterface]{
-					// 		Parent: content_tree,
-					// 		Value: &BlockInline{
-					// 			Content: a,
-					// 		},
-					// 		Children: make([]*Tree[BlockInterface], len(content_tree.Children) - (i+1) - 2),
-					// 	}
-					// 	for j := 0; j < len(a_tree.Children); j++ {
-					// 		a_tree.Children[j] = content_tree.Children[j+i+1]
-					// 		a_tree.Children[j].Parent = a_tree
-					// 	}
-					// 	// Remove temp delimiters
-					// 	content_tree.Children = content_tree.Children[:i]
-					// 	// Insert string modifier
-					// 	content_tree.Children = append(content_tree.Children, a_tree)
-						
-					// 	current_string = ""
-					// } else {
-					// 	current_string += ")"
-					// }
-					// stack_level = 0
 				default:
+					switch PDM_State {
+					case PDM_LinkState_Start, PDM_LinkState_Text_Last_Space, PDM_LinkState_Text_Last_Sq_Bracket:
+						PDM_State = PDM_LinkState_Text_Last_Space
+					case PDM_LinkState_Link:
+						PDM_State = PDM_LinkState_Link
+					default:
+						panic(nil) // This should never be reached!
+					}
 					current_string += string(c)
-					// if stack_level == 2 {
-					// 	stack_level = 0
-					// } else if stack_level == 3 && c == ' ' {
-					// 	stack_level = 0
-					// }
-					// if c == '\\' {
-					// 	is_escaped = true
-					// } else {
-					// 	current_string += string(c)
-					// }
 				}
 			}
 		}

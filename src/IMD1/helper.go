@@ -18,24 +18,11 @@
 package main
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
-
-// =====================================
-// Pairs
-
-type Pair[T, U any] struct {
-	i T
-	j U
-}
-
-func (b Pair[T, U]) String() string {
-	return fmt.Sprintf("(%v, %v)", b.i, b.j)
-}
 
 // =====================================
 // Setup log
