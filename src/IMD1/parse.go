@@ -1072,11 +1072,11 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 							PDM_Stack.Clear()
 						}
 					case PDM_LinkState_Link:
-						current_string += "]"
 						// Do nothing
 					default:
 						panic(nil) // This should never be reached!
 					}
+					current_string += "]"
 				case ' ':
 					switch PDM_State {
 					case PDM_LinkState_Start, PDM_LinkState_Text_Last_Sq_Bracket, PDM_LinkState_Text_Last_Space, PDM_LinkState_Link:
@@ -1121,7 +1121,7 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 						// PDM_text_begin
 						
 						a := new(InlineHref)
-						a.Address = current_string[1:]
+						a.Address = current_string[2:]
 						a_tree := &Tree[BlockInterface]{
 							Parent: content_tree,
 							Value: &BlockInline{
@@ -1129,8 +1129,31 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 							},
 							Children: make([]*Tree[BlockInterface], len(content_tree.Children) - (PDM_text_begin + 1)),
 						}
-						for j := 0; j < len(a_tree.Children); j++ {
-							a_tree.Children[j] = content_tree.Children[j+PDM_text_begin+1]
+						for j := 0; j < len(a_tree.Children); j++ { // TODO - could use cleanup instead of this
+							was_inline_string_delimiter := false
+							if reflect.TypeOf(content_tree.Children[j+PDM_text_begin+1].Value) == reflect.TypeOf(&BlockInline{}) {
+								bic := content_tree.Children[j+PDM_text_begin+1].Value.(*BlockInline).Content
+								if reflect.TypeOf(bic) == reflect.TypeOf(&InlineStringDelimiter{}) {
+									t := bic.(*InlineStringDelimiter).TypeOfDelimiter
+									// Sanity check
+									if t != OpenBracketDelimiter {
+										panic(nil)
+									}
+									was_inline_string_delimiter = true
+									a_tree.Children[j] = &Tree[BlockInterface]{
+										Parent: content_tree,
+										Value: &BlockInline{
+											Content: &InlineRawString{
+												Content: "[",
+											},
+										},
+										Children: nil,
+									}
+								}
+							}
+							if !was_inline_string_delimiter {
+								a_tree.Children[j] = content_tree.Children[j+PDM_text_begin+1]
+							}
 							a_tree.Children[j].Parent = a_tree
 						}
 						// Remove temp delimiters
