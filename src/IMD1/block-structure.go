@@ -797,7 +797,7 @@ func (b *BlockCodeListing) ExecuteAfterBlockStarts(line *LineStruct) {
 	options := GatherBlockOptions(line, []string{"lang", "file", "align", "copy"})
 	b.Language = "plaintext"
 	b.AllowCopy = true
-	if value, ok := options["class"]; ok {
+	if value, ok := options["lang"]; ok {
 		if value == "text" || value == "txt" {
 			b.Language = "plaintext"
 		} else {

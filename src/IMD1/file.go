@@ -101,6 +101,9 @@ func (file FileStruct) GetStringBetween(start Pair[int, int], end Pair[int, int]
 			start.i++
 			start.j = 0
 		} else {
+			if start.j == 0 {
+				s += strings.Repeat(" ", int(file.Lines[start.i].Indentation))
+			}
 			s += string(file.Lines[start.i].RuneContent[start.j])
 			start.j++
 		}

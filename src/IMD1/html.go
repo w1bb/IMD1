@@ -143,7 +143,7 @@ func (b *BlockCodeListing) GenerateHTMLTagPrefix() string {
 		"%v<code class=\"language-%v\">%v",
 		r,
 		b.Language,
-		b.RawContent,
+		strings.TrimSpace(b.RawContent),
 	)
 }
 
