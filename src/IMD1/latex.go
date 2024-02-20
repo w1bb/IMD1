@@ -138,6 +138,17 @@ func (b *BlockCodeListing) GenerateLaTeXTagSuffix() string {
 }
 
 // =====================================
+// Comment LaTeX interface
+
+func (b *BlockComment) GenerateLaTeXTagPrefix() string {
+	return "" // TODO
+}
+
+func (b *BlockComment) GenerateLaTeXTagSuffix() string {
+	return ""
+}
+
+// =====================================
 // HTML LaTeX interface (ignored)
 
 func (b *BlockHTML) GenerateLaTeXTagPrefix() string {

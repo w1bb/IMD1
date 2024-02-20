@@ -11,6 +11,8 @@
 
 **IMD1** (to be read as _"I am The One"_) is both a very customizable Markdown-like specification and a Go implementation custom tailored for it that can convert from **IMD1** to both **HTML** and **LaTeX**.
 
+The compiler **avoids Regex** at all costs! [Regex is **the worst!**](https://blog.cloudflare.com/details-of-the-cloudflare-outage-on-july-2-2019)
+
 This project is **by no means complete** - it is a work in progress, kept alive only by my passion for great article-writing software.
 
 ## License
@@ -26,6 +28,7 @@ Table of contents
 - [The specification](#the-specification)
     - [Headings and paragraphs](#headings-and-paragraphs)
     - [Inline text modifiers](#inline-text-modifiers)
+    - [Links](#links)
     - [Math support](#math-support)
     - [Code listings](#code-listings)
     - [HTML and LaTeX](#html-and-latex)
@@ -36,6 +39,7 @@ Table of contents
     - [Footnotes](#footnotes)
     - [Metadata](#metadata)
     - [Bibliography](#bibliography)
+    - [Comments](#comments)
 - [API](#api)
     - [Golang API](#golang-api)
     - [Exposed API](#exposed-api)
@@ -98,6 +102,12 @@ The OG Markdown **text modifiers** have also suffered some changes. Whilst both 
 There is also no difference between `_` and `*`, they both behave in a similar way to how the `*` operator behaved in vanilla Markdown. However, as I've already examplified, they cannot be interchanged.
 
 A new modifier has also been introduced, the strikeout operator, `~`. For example, `~hello~` would yield <del>hello</del>.
+
+### Links
+
+**Links** are supported as well and their syntax follows the Commonmark guidelines as close as possible. To make it work, I've used a modified pushdown automaton - this ensures both speed and correctness. As I've stated above, I **never** used Regex in this project due to its _many_ flaws!
+
+The syntax is `[text](link/to/resource)`. For example, `[hey](https://archlinux.org)` would produce [hey](https://archlinux.org).
 
 ### Math support
 
@@ -333,6 +343,10 @@ Here is an example of valid bibliography
 
 The reference |ref>tag-1<ref| is valid, and so is |ref>tag-2<ref| (however, the compiler will trigger a warning). But |ref>hello<ref| is invalid and will be converted to [?].
 ```
+
+### Comments
+
+Finally, there are **comments**. These work in the same way HTML comments would, meaning you can use the `<!--..-->` syntax to write them. Currently, these comments **will get copied** to the final HTML/LaTeX file.
 
 ## API
 

@@ -111,6 +111,7 @@ func (b *BlockDocument) ExecuteAfterBlockEnds(line *LineStruct) {
 
 func (b BlockDocument) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
+		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
 		&BlockCodeListing{},
@@ -287,6 +288,7 @@ func (b BlockHeading) SeekBufferAfterBlockEnds() int {
 
 func (b BlockHeading) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
+		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
 		&BlockInlineCodeListing{},
@@ -383,6 +385,7 @@ func (b BlockTextbox) SeekBufferAfterBlockEnds() int {
 
 func (b BlockTextbox) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
+		&BlockComment{},
 		&BlockTextboxTitle{},
 		&BlockTextboxContent{},
 	}
@@ -466,6 +469,7 @@ func (b BlockTextboxTitle) SeekBufferAfterBlockEnds() int {
 
 func (b BlockTextboxTitle) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
+		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
 		&BlockInlineCodeListing{},
@@ -553,6 +557,7 @@ func (b BlockTextboxContent) SeekBufferAfterBlockEnds() int {
 
 func (b BlockTextboxContent) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
+		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
 		&BlockCodeListing{},
@@ -586,6 +591,88 @@ func (b *BlockTextboxContent) GetBlockStruct() *BlockStruct {
 
 func (b *BlockTextboxContent) GetRawContent() *string {
 	return nil
+}
+
+// =====================================
+// HTML code
+
+type BlockComment struct {
+	BlockStruct
+	RawContent string
+}
+
+func (b BlockComment) String() string {
+	return fmt.Sprintf(
+		"BlockComment, %v :: \"%v\"",
+		b.BlockStruct.String(),
+		b.RawContent,
+	)
+}
+
+func (b *BlockComment) CheckBlockStarts(line LineStruct) bool {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<!--")
+}
+
+func (b BlockComment) SeekBufferAfterBlockStarts() int {
+	return 1
+}
+
+func (b *BlockComment) ExecuteAfterBlockStarts(line *LineStruct) {
+	b.Start = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ - 4,
+	}
+	b.ContentStart = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+}
+
+func (b *BlockComment) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "-->"), nil, 0
+}
+
+func (b BlockComment) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+	return false
+}
+
+func (b *BlockComment) ExecuteAfterBlockEnds(line *LineStruct) {
+	b.End = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+	b.ContentEnd = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ - 3,
+	}
+}
+
+func (b BlockComment) SeekBufferAfterBlockEnds() int {
+	return 1
+}
+
+func (b BlockComment) GetBlocksAllowedInside() []BlockInterface {
+	return nil
+}
+
+func (b BlockComment) AcceptBlockInside(other BlockInterface) bool {
+	return false // irrelevant
+}
+
+func (b BlockComment) IsPartOfParagraph() bool {
+	return false
+}
+
+func (b BlockComment) DigDeeperForParagraphs() bool {
+	return false
+}
+
+func (b *BlockComment) GetBlockStruct() *BlockStruct {
+	return &b.BlockStruct
+}
+
+func (b *BlockComment) GetRawContent() *string {
+	return &b.RawContent
 }
 
 // =====================================
@@ -1405,6 +1492,7 @@ func (b BlockUlLi) SeekBufferAfterBlockEnds() int {
 
 func (b BlockUlLi) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
+		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
 		&BlockCodeListing{},
@@ -1662,6 +1750,7 @@ func (b BlockOlLi) SeekBufferAfterBlockEnds() int {
 
 func (b BlockOlLi) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
+		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
 		&BlockCodeListing{},
@@ -1788,6 +1877,7 @@ func (b BlockFigure) SeekBufferAfterBlockEnds() int {
 
 func (b BlockFigure) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
+		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
 		&BlockSubfigure{},
@@ -1883,6 +1973,7 @@ func (b BlockSubfigure) SeekBufferAfterBlockEnds() int {
 
 func (b BlockSubfigure) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
+		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
 		&BlockCodeListing{},
@@ -1974,6 +2065,7 @@ func (b BlockFootnote) SeekBufferAfterBlockEnds() int {
 
 func (b BlockFootnote) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface {
+		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
 		&BlockCodeListing{},
@@ -2245,6 +2337,7 @@ func (b BlockMeta) SeekBufferAfterBlockEnds() int {
 
 func (b BlockMeta) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
+		// &BlockComment{}, - not needed, will not be ported to HTML
 		&BlockMetaAuthor{},
 		&BlockMetaCopyright{},
 		&BlockMetaBibinfo{},

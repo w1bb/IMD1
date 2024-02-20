@@ -152,6 +152,17 @@ func (b *BlockCodeListing) GenerateHTMLTagSuffix() string {
 }
 
 // =====================================
+// Comment HTML interface
+
+func (b *BlockComment) GenerateHTMLTagPrefix() string {
+	return "<!--" + b.RawContent + "-->"
+}
+
+func (b *BlockComment) GenerateHTMLTagSuffix() string {
+	return ""
+}
+
+// =====================================
 // HTML HTML interface
 
 func (b *BlockHTML) GenerateHTMLTagPrefix() string {
