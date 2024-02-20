@@ -1287,7 +1287,7 @@ func (b *BlockUl) CheckBlockEndsNormally(line *LineStruct, parsing_stack Parsing
 }
 
 func (b BlockUl) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
-	return NewLines >= 1
+	return NewLines >= 1 || Indentation < b.Indentation
 }
 
 func (b *BlockUl) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -1523,7 +1523,7 @@ func (b *BlockOl) CheckBlockEndsNormally(line *LineStruct, parsing_stack Parsing
 }
 
 func (b BlockOl) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
-	return NewLines >= 1
+	return NewLines >= 1 || Indentation < b.Indentation
 }
 
 func (b *BlockOl) ExecuteAfterBlockEnds(line *LineStruct) {
