@@ -16,8 +16,17 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import ctypes
+import os
 
-imd1_lib_so = ctypes.cdll.LoadLibrary("./libimd1.so")
+
+
+# =====================================
+# Load the library
+
+current_file_path = os.path.abspath(__file__)
+current_folder_path = os.path.dirname(current_file_path)
+lib_path = os.path.join(current_folder_path, "libimd1.so")
+imd1_lib_so = ctypes.cdll.LoadLibrary(lib_path)
 
 
 
@@ -80,14 +89,3 @@ def Py_IMD1_MDToLaTeX(py_s):
     c_s = py_s.encode('utf-8')
     c_ret = imd1_lib_so.C_IMD1_MDToLaTeX(c_s)
     return ctypes.string_at(c_ret).decode('utf-8')
-
-
-
-# =====================================
-# Testing
-
-# html = Py_IMD1_MDFileToHTML("input.md")
-# html = Py_IMD1_MDToHTML("|textbox>|title>Long *but working* $t$itle<title||content>He$$he$$h<content|<textbox|")
-# Py_IMD1_MDToHTMLFile("Hello **world**", "test.html")
-# Py_IMD1_MDFileToHTMLFile("t.md", "test.html")
-# print(html)
