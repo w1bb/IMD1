@@ -38,7 +38,7 @@ type HTMLInterface interface {
 // Document HTML interface
 
 func (b *BlockDocument) GenerateHTMLTagPrefix() string {
-	return "<html>\n<body>\n"
+	return "<!DOCTYPE html>\n<html>\n<head><title></title></head>\n<body>\n"
 }
 
 func (b *BlockDocument) GenerateHTMLTagSuffix() string {

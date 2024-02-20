@@ -28,10 +28,10 @@ import (
 // Generic block structure
 
 type BlockStruct struct {
-	Start Pair
-	End Pair
-	ContentStart Pair
-	ContentEnd Pair
+	Start Pair[int, int]
+	End Pair[int, int]
+	ContentStart Pair[int, int]
+	ContentEnd Pair[int, int]
 }
 
 func (b BlockStruct) String() string {
@@ -237,10 +237,10 @@ func (b BlockHeading) String() string {
 }
 
 func (b *BlockHeading) CheckBlockStarts(line LineStruct) bool {
-	if !CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "#") {
+	if line.RuneJ != 0 || line.RuneContent[line.RuneJ] != '#' {
 		return false
 	}
-	for line.RuneContent[line.RuneJ + b.HeadingLevel] == '#' {
+	for (line.RuneJ + b.HeadingLevel) < len(line.RuneContent) && line.RuneContent[line.RuneJ + b.HeadingLevel] == '#' {
 		b.HeadingLevel++
 	}
 	return true
@@ -251,7 +251,7 @@ func (b BlockHeading) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockHeading) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - b.HeadingLevel,
 	}
@@ -259,7 +259,7 @@ func (b *BlockHeading) ExecuteAfterBlockStarts(line *LineStruct) {
 	if value, ok := options["anchor"]; ok {
 		b.Anchor = value
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -274,7 +274,7 @@ func (b BlockHeading) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Inde
 }
 
 func (b *BlockHeading) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -344,7 +344,7 @@ func (b BlockTextbox) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockTextbox) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 9,
 	}
@@ -352,7 +352,7 @@ func (b *BlockTextbox) ExecuteAfterBlockStarts(line *LineStruct) {
 	if value, ok := options["class"]; ok {
 		b.Class = value
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -367,11 +367,11 @@ func (b BlockTextbox) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Inde
 }
 
 func (b *BlockTextbox) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 9,
 	}
@@ -431,11 +431,11 @@ func (b BlockTextboxTitle) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockTextboxTitle) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 7,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -450,11 +450,11 @@ func (b BlockTextboxTitle) CheckBlockEndsViaNewLinesAndIndentation(NewLines int,
 }
 
 func (b *BlockTextboxTitle) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 7,
 	}
@@ -518,11 +518,11 @@ func (b BlockTextboxContent) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockTextboxContent) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 9,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -537,11 +537,11 @@ func (b BlockTextboxContent) CheckBlockEndsViaNewLinesAndIndentation(NewLines in
 }
 
 func (b *BlockTextboxContent) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 9,
 	}
@@ -613,11 +613,11 @@ func (b BlockHTML) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockHTML) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 6,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -632,11 +632,11 @@ func (b BlockHTML) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indenta
 }
 
 func (b *BlockHTML) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 6,
 	}
@@ -695,11 +695,11 @@ func (b BlockLaTeX) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockLaTeX) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 7,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -714,11 +714,11 @@ func (b BlockLaTeX) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indent
 }
 
 func (b *BlockLaTeX) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 7,
 	}
@@ -790,7 +790,7 @@ func (b BlockCodeListing) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockCodeListing) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 3,
 	}
@@ -813,7 +813,7 @@ func (b *BlockCodeListing) ExecuteAfterBlockStarts(line *LineStruct) {
 	if value, ok := options["copy"]; ok {
 		b.AllowCopy = Contains([]string{"allow", "allowed", "1", "true", "ok", "yes"}, value)
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -828,11 +828,11 @@ func (b BlockCodeListing) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, 
 }
 
 func (b *BlockCodeListing) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 3,
 	}
@@ -897,11 +897,11 @@ func (b BlockInlineCodeListing) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockInlineCodeListing) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ-1,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -916,11 +916,11 @@ func (b BlockInlineCodeListing) CheckBlockEndsViaNewLinesAndIndentation(NewLines
 }
 
 func (b *BlockInlineCodeListing) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ-1,
 	}
@@ -1031,13 +1031,13 @@ func (b BlockMath) SeekBufferAfterBlockStarts() int {
 func (b *BlockMath) ExecuteAfterBlockStarts(line *LineStruct) {
 	switch b.TypeOfBlock {
 	case BeginEquation:
-		b.Start = Pair{line.LineIndex, line.RuneJ-16}
+		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ-16}
 	case BeginAlign:
-		b.Start = Pair{line.LineIndex, line.RuneJ-13}
+		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ-13}
 	case Brackets, DoubleDollar:
-		b.Start = Pair{line.LineIndex, line.RuneJ-2}
+		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ-2}
 	}
-	b.ContentStart = Pair{line.LineIndex, line.RuneJ}
+	b.ContentStart = Pair[int, int]{line.LineIndex, line.RuneJ}
 }
 
 func (b *BlockMath) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
@@ -1062,22 +1062,22 @@ func (b BlockMath) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indenta
 func (b *BlockMath) ExecuteAfterBlockEnds(line *LineStruct) {
 	switch b.TypeOfBlock {
 	case BeginEquation:
-		b.ContentEnd = Pair{
+		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ-14,
 		}
 	case BeginAlign:
-		b.ContentEnd = Pair{
+		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ-11,
 		}
 	case Brackets, DoubleDollar:
-		b.ContentEnd = Pair{
+		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ-2,
 		}
 	}
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1171,17 +1171,17 @@ func (b BlockInlineMath) SeekBufferAfterBlockStarts() int {
 func (b *BlockInlineMath) ExecuteAfterBlockStarts(line *LineStruct) {
 	switch b.TypeOfBlock {
 	case Parenthesis:
-		b.Start = Pair{
+		b.Start = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ-2,
 		}
 	case SingleDollar:
-		b.Start = Pair{
+		b.Start = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ-1,
 		}
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1205,17 +1205,17 @@ func (b BlockInlineMath) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, I
 func (b *BlockInlineMath) ExecuteAfterBlockEnds(line *LineStruct) {
 	switch b.TypeOfBlock {
 	case Parenthesis:
-		b.ContentEnd = Pair{
+		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ-2,
 		}
 	case SingleDollar:
-		b.ContentEnd = Pair{
+		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ-1,
 		}
 	}
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		line.LineIndex,
 		line.RuneJ,
 	}
@@ -1275,7 +1275,7 @@ func (b BlockUl) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockUl) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1291,7 +1291,7 @@ func (b BlockUl) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentati
 }
 
 func (b *BlockUl) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1360,11 +1360,11 @@ func (b BlockUlLi) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockUlLi) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ-1,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1392,7 +1392,7 @@ func (b BlockUlLi) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indenta
 }
 
 func (b *BlockUlLi) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1511,7 +1511,7 @@ func (b BlockOl) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockOl) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 1,
 	}
@@ -1527,7 +1527,7 @@ func (b BlockOl) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentati
 }
 
 func (b *BlockOl) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1617,11 +1617,11 @@ func (b BlockOlLi) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockOlLi) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ-2,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1649,7 +1649,7 @@ func (b BlockOlLi) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indenta
 }
 
 func (b *BlockOlLi) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1729,7 +1729,7 @@ func (b BlockFigure) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockFigure) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 8,
 	}
@@ -1757,7 +1757,7 @@ func (b *BlockFigure) ExecuteAfterBlockStarts(line *LineStruct) {
 	if value, ok := options["padding"]; ok {
 		b.Padding = value
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1772,11 +1772,11 @@ func (b BlockFigure) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Inden
 }
 
 func (b *BlockFigure) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 8,
 	}
@@ -1841,7 +1841,7 @@ func (b BlockSubfigure) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockSubfigure) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 11,
 	}
@@ -1852,7 +1852,7 @@ func (b *BlockSubfigure) ExecuteAfterBlockStarts(line *LineStruct) {
 	if value, ok := options["padding"]; ok {
 		b.Padding = value
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1863,11 +1863,11 @@ func (b *BlockSubfigure) CheckBlockEndsNormally(line *LineStruct, parsing_stack 
 }
 
 func (b *BlockSubfigure) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 11,
 	}
@@ -1939,11 +1939,11 @@ func (b BlockFootnote) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockFootnote) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 10,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -1958,11 +1958,11 @@ func (b BlockFootnote) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Ind
 }
 
 func (b *BlockFootnote) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 10,
 	}
@@ -2034,7 +2034,7 @@ func (b BlockRef) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockRef) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 5,
 	}
@@ -2042,7 +2042,7 @@ func (b *BlockRef) ExecuteAfterBlockStarts(line *LineStruct) {
 	if value, ok := options["file"]; ok {
 		b.File = value
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -2057,11 +2057,11 @@ func (b BlockRef) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentat
 }
 
 func (b *BlockRef) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 5,
 	}
@@ -2130,11 +2130,11 @@ func (b BlockBibliography) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockBibliography) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 14,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -2149,11 +2149,11 @@ func (b BlockBibliography) CheckBlockEndsViaNewLinesAndIndentation(NewLines int,
 }
 
 func (b *BlockBibliography) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 14,
 	}
@@ -2210,11 +2210,11 @@ func (b BlockMeta) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockMeta) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 6,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -2229,11 +2229,11 @@ func (b BlockMeta) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indenta
 }
 
 func (b *BlockMeta) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 6,
 	}
@@ -2296,11 +2296,11 @@ func (b BlockMetaAuthor) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockMetaAuthor) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 8,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -2315,11 +2315,11 @@ func (b BlockMetaAuthor) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, I
 }
 
 func (b *BlockMetaAuthor) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 8,
 	}
@@ -2378,11 +2378,11 @@ func (b BlockMetaCopyright) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockMetaCopyright) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 11,
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -2397,11 +2397,11 @@ func (b BlockMetaCopyright) CheckBlockEndsViaNewLinesAndIndentation(NewLines int
 }
 
 func (b *BlockMetaCopyright) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 11,
 	}
@@ -2462,7 +2462,7 @@ func (b BlockMetaBibinfo) SeekBufferAfterBlockStarts() int {
 }
 
 func (b *BlockMetaBibinfo) ExecuteAfterBlockStarts(line *LineStruct) {
-	b.Start = Pair{
+	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 9,
 	}
@@ -2470,7 +2470,7 @@ func (b *BlockMetaBibinfo) ExecuteAfterBlockStarts(line *LineStruct) {
 	if value, ok := options["inline"]; ok {
 		b.JSONInline = Contains([]string{"allow", "allowed", "1", "true", "ok", "yes"}, value)
 	}
-	b.ContentStart = Pair{
+	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
@@ -2485,11 +2485,11 @@ func (b BlockMetaBibinfo) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, 
 }
 
 func (b *BlockMetaBibinfo) ExecuteAfterBlockEnds(line *LineStruct) {
-	b.End = Pair{
+	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
 	}
-	b.ContentEnd = Pair{
+	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 9,
 	}

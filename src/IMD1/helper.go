@@ -28,12 +28,12 @@ import (
 // =====================================
 // Pairs
 
-type Pair struct {
-	i int
-	j int
+type Pair[T, U any] struct {
+	i T
+	j U
 }
 
-func (b Pair) String() string {
+func (b Pair[T, U]) String() string {
 	return fmt.Sprintf("(%v, %v)", b.i, b.j)
 }
 

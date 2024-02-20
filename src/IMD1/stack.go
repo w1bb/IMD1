@@ -56,6 +56,9 @@ func (s *Stack[T]) Top() *T {
 }
 
 func (s *Stack[T]) Push(element T) {
+	if s.full_content == nil {
+		s.full_content = make([]T, 0)
+	}
 	s.full_content = append(s.full_content, element)
 }
 
@@ -66,4 +69,8 @@ func (s *Stack[T]) Pop() *T {
 	x := &s.full_content[len(s.full_content) - 1]
 	s.full_content = s.full_content[:len(s.full_content) - 1]
 	return x
+}
+
+func (s *Stack[T]) Clear() {
+	s.full_content = make([]T, 0)
 }

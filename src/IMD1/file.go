@@ -90,7 +90,7 @@ func (file *FileStruct) ReadFile(filename string) {
 	file.ReadString(string(s))
 }
 
-func (file FileStruct) GetStringBetween(start Pair, end Pair) string {
+func (file FileStruct) GetStringBetween(start Pair[int, int], end Pair[int, int]) string {
 	if len(file.Lines) <= start.i {
 		return ""
 	}

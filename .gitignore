@@ -1,8 +1,11 @@
 Makefile
 
 src/bib-example.json
+
 src/IMD1/input.md
 src/IMD1/output.html
+src/IMD1/test.md
+src/IMD1/test.html
 
 examples/01-hello-world/libimd1.h
 examples/01-hello-world/libimd1.so
