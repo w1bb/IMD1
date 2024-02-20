@@ -321,7 +321,7 @@ func (b *BlockSubfigure) GenerateLaTeXTagSuffix() string {
 // Footnote LaTeX interface
 
 func (b *BlockFootnote) GenerateLaTeXTagPrefix() string {
-	return "\\footnote{" 
+	return "\\footnote{"
 }
 
 func (b *BlockFootnote) GenerateLaTeXTagSuffix() string {
@@ -486,8 +486,8 @@ func GenerateLaTeX(tree *Tree[BlockInterface]) string {
 		return "" // Just to be sure
 	}
 	var s strings.Builder
-	var GenerateLaTeXHelper func (tree *Tree[BlockInterface], sb *strings.Builder)
-	GenerateLaTeXHelper = func (tree *Tree[BlockInterface], sb *strings.Builder) {
+	var GenerateLaTeXHelper func(tree *Tree[BlockInterface], sb *strings.Builder)
+	GenerateLaTeXHelper = func(tree *Tree[BlockInterface], sb *strings.Builder) {
 		sb.WriteString(tree.Value.GenerateLaTeXTagPrefix())
 		for i := 0; i < len(tree.Children); i++ {
 			GenerateLaTeXHelper(tree.Children[i], sb)

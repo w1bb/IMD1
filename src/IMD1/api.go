@@ -81,7 +81,7 @@ func IMD1_MDFileToHTML(md_filename string) string {
 func IMD1_MDToHTML(s string) string {
 	var file FileStruct
 	file.ReadString(s)
-	
+
 	return IMD1_MDToHTMLHelper(file)
 }
 
@@ -172,7 +172,7 @@ func IMD1_MDFileToLaTeX(md_filename string) string {
 func IMD1_MDToLaTeX(s string) string {
 	var file FileStruct
 	file.ReadString(s)
-	
+
 	return IMD1_MDToLaTeXHelper(file)
 }
 

@@ -132,7 +132,7 @@ func (t InlineDelimiterType) String() string {
 }
 
 type InlineDelimiter struct {
-	Type InlineDelimiterType
+	Type  InlineDelimiterType
 	Count int
 }
 

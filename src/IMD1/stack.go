@@ -52,7 +52,7 @@ func (s *Stack[T]) Top() *T {
 	if s.Empty() {
 		return nil
 	}
-	return &s.full_content[len(s.full_content) - 1]
+	return &s.full_content[len(s.full_content)-1]
 }
 
 func (s *Stack[T]) Push(element T) {
@@ -66,8 +66,8 @@ func (s *Stack[T]) Pop() *T {
 	if s.Empty() {
 		return nil
 	}
-	x := &s.full_content[len(s.full_content) - 1]
-	s.full_content = s.full_content[:len(s.full_content) - 1]
+	x := &s.full_content[len(s.full_content)-1]
+	s.full_content = s.full_content[:len(s.full_content)-1]
 	return x
 }
 

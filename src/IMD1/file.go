@@ -29,11 +29,11 @@ import (
 // Line structure
 
 type LineStruct struct {
-	LineIndex int
+	LineIndex   int
 	Indentation uint16
 
 	RuneContent []rune
-	RuneJ int
+	RuneJ       int
 }
 
 func (line LineStruct) String() string {
@@ -59,7 +59,7 @@ type FileStruct struct {
 
 func (file FileStruct) String() string {
 	var aux string
-	for _, line := range(file.Lines) {
+	for _, line := range file.Lines {
 		aux += "  " + line.String() + "\n"
 	}
 	return fmt.Sprintf("FileStruct <%v lines> {\n%v}", len(file.Lines), aux)
@@ -70,13 +70,13 @@ func (file *FileStruct) ReadString(s string) {
 		strings.ReplaceAll(s, "\r\n", "\n"),
 		"\n")
 	file.Lines = make([]LineStruct, len(content))
-	for i := range(file.Lines) {
+	for i := range file.Lines {
 		simple, total := CountPrefixSpaces(content[i])
 		file.Lines[i] = LineStruct{
 			Indentation: total,
 			RuneContent: []rune(content[i][simple:]),
-			RuneJ: 0, // Default already
-			LineIndex: i,
+			RuneJ:       0, // Default already
+			LineIndex:   i,
 		}
 	}
 	log.Debug(file)

@@ -28,10 +28,10 @@ import (
 // Generic block structure
 
 type BlockStruct struct {
-	Start Pair[int, int]
-	End Pair[int, int]
+	Start        Pair[int, int]
+	End          Pair[int, int]
 	ContentStart Pair[int, int]
-	ContentEnd Pair[int, int]
+	ContentEnd   Pair[int, int]
 }
 
 func (b BlockStruct) String() string {
@@ -54,7 +54,7 @@ type BlockInterface interface {
 	CheckBlockStarts(line LineStruct) bool
 	SeekBufferAfterBlockStarts() int
 	ExecuteAfterBlockStarts(line *LineStruct)
-	
+
 	CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int)
 	CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool
 	ExecuteAfterBlockEnds(line *LineStruct)
@@ -110,7 +110,7 @@ func (b *BlockDocument) ExecuteAfterBlockEnds(line *LineStruct) {
 }
 
 func (b BlockDocument) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
@@ -180,7 +180,7 @@ func (b *BlockParagraph) ExecuteAfterBlockStarts(line *LineStruct) {
 }
 
 func (b *BlockParagraph) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
-	return false, nil, 0// irrelevant
+	return false, nil, 0 // irrelevant
 }
 
 func (b BlockParagraph) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
@@ -225,7 +225,7 @@ func (b *BlockParagraph) GetRawContent() *string {
 type BlockHeading struct {
 	BlockStruct
 	HeadingLevel int
-	Anchor string
+	Anchor       string
 }
 
 func (b BlockHeading) String() string {
@@ -241,7 +241,7 @@ func (b *BlockHeading) CheckBlockStarts(line LineStruct) bool {
 	if line.RuneJ != 0 || line.RuneContent[line.RuneJ] != '#' {
 		return false
 	}
-	for (line.RuneJ + b.HeadingLevel) < len(line.RuneContent) && line.RuneContent[line.RuneJ + b.HeadingLevel] == '#' {
+	for (line.RuneJ+b.HeadingLevel) < len(line.RuneContent) && line.RuneContent[line.RuneJ+b.HeadingLevel] == '#' {
 		b.HeadingLevel++
 	}
 	return true
@@ -287,7 +287,7 @@ func (b BlockHeading) SeekBufferAfterBlockEnds() int {
 }
 
 func (b BlockHeading) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
@@ -384,7 +384,7 @@ func (b BlockTextbox) SeekBufferAfterBlockEnds() int {
 }
 
 func (b BlockTextbox) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockComment{},
 		&BlockTextboxTitle{},
 		&BlockTextboxContent{},
@@ -468,7 +468,7 @@ func (b BlockTextboxTitle) SeekBufferAfterBlockEnds() int {
 }
 
 func (b BlockTextboxTitle) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
@@ -556,7 +556,7 @@ func (b BlockTextboxContent) SeekBufferAfterBlockEnds() int {
 }
 
 func (b BlockTextboxContent) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
@@ -844,10 +844,10 @@ func (b *BlockLaTeX) GetRawContent() *string {
 
 type BlockCodeListing struct {
 	BlockStruct
-	Language string
-	Filename string
-	TextAlign string
-	AllowCopy bool
+	Language   string
+	Filename   string
+	TextAlign  string
+	AllowCopy  bool
 	RawContent string
 }
 
@@ -864,7 +864,7 @@ func (b BlockCodeListing) String() string {
 
 func (b *BlockCodeListing) CheckBlockStarts(line LineStruct) bool {
 	if CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "`") {
-		if line.RuneJ + 2 >= len(line.RuneContent) {
+		if line.RuneJ+2 >= len(line.RuneContent) {
 			return false
 		}
 		return line.RuneContent[line.RuneJ+1] == rune('`') && line.RuneContent[line.RuneJ+2] == rune('`')
@@ -971,7 +971,7 @@ func (b BlockInlineCodeListing) String() string {
 
 func (b *BlockInlineCodeListing) CheckBlockStarts(line LineStruct) bool {
 	if CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "`") {
-		if line.RuneJ + 2 >= len(line.RuneContent) {
+		if line.RuneJ+2 >= len(line.RuneContent) {
 			return true
 		}
 		return line.RuneContent[line.RuneJ+1] != rune('`') || line.RuneContent[line.RuneJ+2] != rune('`')
@@ -986,7 +986,7 @@ func (b BlockInlineCodeListing) SeekBufferAfterBlockStarts() int {
 func (b *BlockInlineCodeListing) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = Pair[int, int]{
 		i: line.LineIndex,
-		j: line.RuneJ-1,
+		j: line.RuneJ - 1,
 	}
 	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
@@ -1009,7 +1009,7 @@ func (b *BlockInlineCodeListing) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 	b.ContentEnd = Pair[int, int]{
 		i: line.LineIndex,
-		j: line.RuneJ-1,
+		j: line.RuneJ - 1,
 	}
 }
 
@@ -1071,7 +1071,7 @@ func (t BlockMathType) String() string {
 type BlockMath struct {
 	BlockStruct
 	TypeOfBlock BlockMathType
-	RawContent string
+	RawContent  string
 }
 
 func (b BlockMath) String() string {
@@ -1095,7 +1095,7 @@ func (b *BlockMath) CheckBlockStarts(line LineStruct) bool {
 		b.TypeOfBlock = Brackets
 		return true
 	} else if CheckRunesEndWithUnescapedASCII(s, "$") {
-		if line.RuneJ + 1 < len(line.RuneContent) && line.RuneContent[line.RuneJ+1] == '$' {
+		if line.RuneJ+1 < len(line.RuneContent) && line.RuneContent[line.RuneJ+1] == '$' {
 			b.TypeOfBlock = DoubleDollar
 			return true
 		} else {
@@ -1118,11 +1118,11 @@ func (b BlockMath) SeekBufferAfterBlockStarts() int {
 func (b *BlockMath) ExecuteAfterBlockStarts(line *LineStruct) {
 	switch b.TypeOfBlock {
 	case BeginEquation:
-		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ-16}
+		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 16}
 	case BeginAlign:
-		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ-13}
+		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 13}
 	case Brackets, DoubleDollar:
-		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ-2}
+		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 2}
 	}
 	b.ContentStart = Pair[int, int]{line.LineIndex, line.RuneJ}
 }
@@ -1151,17 +1151,17 @@ func (b *BlockMath) ExecuteAfterBlockEnds(line *LineStruct) {
 	case BeginEquation:
 		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
-			j: line.RuneJ-14,
+			j: line.RuneJ - 14,
 		}
 	case BeginAlign:
 		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
-			j: line.RuneJ-11,
+			j: line.RuneJ - 11,
 		}
 	case Brackets, DoubleDollar:
 		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
-			j: line.RuneJ-2,
+			j: line.RuneJ - 2,
 		}
 	}
 	b.End = Pair[int, int]{
@@ -1222,7 +1222,7 @@ func (t BlockInlineMathType) String() string {
 type BlockInlineMath struct {
 	BlockStruct
 	TypeOfBlock BlockInlineMathType
-	RawContent string
+	RawContent  string
 }
 
 func (b BlockInlineMath) String() string {
@@ -1241,7 +1241,7 @@ func (b *BlockInlineMath) CheckBlockStarts(line LineStruct) bool {
 		b.TypeOfBlock = Parenthesis
 		return true
 	} else if CheckRunesEndWithUnescapedASCII(s, "$") {
-		if line.RuneJ + 1 < len(line.RuneContent) && line.RuneContent[line.RuneJ+1] == '$' {
+		if line.RuneJ+1 < len(line.RuneContent) && line.RuneContent[line.RuneJ+1] == '$' {
 			return false
 		} else {
 			b.TypeOfBlock = SingleDollar
@@ -1260,12 +1260,12 @@ func (b *BlockInlineMath) ExecuteAfterBlockStarts(line *LineStruct) {
 	case Parenthesis:
 		b.Start = Pair[int, int]{
 			i: line.LineIndex,
-			j: line.RuneJ-2,
+			j: line.RuneJ - 2,
 		}
 	case SingleDollar:
 		b.Start = Pair[int, int]{
 			i: line.LineIndex,
-			j: line.RuneJ-1,
+			j: line.RuneJ - 1,
 		}
 	}
 	b.ContentStart = Pair[int, int]{
@@ -1294,12 +1294,12 @@ func (b *BlockInlineMath) ExecuteAfterBlockEnds(line *LineStruct) {
 	case Parenthesis:
 		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
-			j: line.RuneJ-2,
+			j: line.RuneJ - 2,
 		}
 	case SingleDollar:
 		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
-			j: line.RuneJ-1,
+			j: line.RuneJ - 1,
 		}
 	}
 	b.End = Pair[int, int]{
@@ -1390,7 +1390,7 @@ func (b BlockUl) SeekBufferAfterBlockEnds() int {
 }
 
 func (b BlockUl) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockUlLi{},
 	}
 }
@@ -1424,7 +1424,7 @@ func (b *BlockUl) GetRawContent() *string {
 type BlockUlLi struct {
 	BlockStruct
 	Indentation uint16
-	LineIndex int
+	LineIndex   int
 }
 
 func (b BlockUlLi) String() string {
@@ -1449,7 +1449,7 @@ func (b BlockUlLi) SeekBufferAfterBlockStarts() int {
 func (b *BlockUlLi) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = Pair[int, int]{
 		i: line.LineIndex,
-		j: line.RuneJ-1,
+		j: line.RuneJ - 1,
 	}
 	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
@@ -1471,11 +1471,11 @@ func (b *BlockUlLi) CheckBlockEndsNormally(line *LineStruct, parsing_stack Parsi
 		return aux.Indentation <= b.Indentation, nil, 0
 	}
 	// Different indentation
-	return line.Indentation != b.Indentation + 2, nil, 0
+	return line.Indentation != b.Indentation+2, nil, 0
 }
 
 func (b BlockUlLi) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
-	return NewLines >= 1 && Indentation != b.Indentation + 2
+	return NewLines >= 1 && Indentation != b.Indentation+2
 }
 
 func (b *BlockUlLi) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -1491,7 +1491,7 @@ func (b BlockUlLi) SeekBufferAfterBlockEnds() int {
 }
 
 func (b BlockUlLi) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
@@ -1578,15 +1578,15 @@ func (b *BlockOl) CheckBlockStarts(line LineStruct) bool {
 	if line.RuneJ != 1 {
 		return false
 	}
-	if line.RuneContent[line.RuneJ - 1] >= rune('1') && line.RuneContent[line.RuneJ - 1] <= rune('9') {
+	if line.RuneContent[line.RuneJ-1] >= rune('1') && line.RuneContent[line.RuneJ-1] <= rune('9') {
 		b.TypeOfBlock = OlType_1
-	} else if line.RuneContent[line.RuneJ - 1] == rune('I') {
+	} else if line.RuneContent[line.RuneJ-1] == rune('I') {
 		b.TypeOfBlock = OlType_I
-	} else if line.RuneContent[line.RuneJ - 1] == rune('i') {
+	} else if line.RuneContent[line.RuneJ-1] == rune('i') {
 		b.TypeOfBlock = OlType_i
-	} else if line.RuneContent[line.RuneJ - 1] >= rune('A') && line.RuneContent[line.RuneJ - 1] <= rune('Z') { // excepts I
+	} else if line.RuneContent[line.RuneJ-1] >= rune('A') && line.RuneContent[line.RuneJ-1] <= rune('Z') { // excepts I
 		b.TypeOfBlock = OlType_A
-	} else if line.RuneContent[line.RuneJ - 1] >= rune('a') && line.RuneContent[line.RuneJ - 1] <= rune('z') { // excepts i
+	} else if line.RuneContent[line.RuneJ-1] >= rune('a') && line.RuneContent[line.RuneJ-1] <= rune('z') { // excepts i
 		b.TypeOfBlock = OlType_a
 	} else {
 		return false
@@ -1627,7 +1627,7 @@ func (b BlockOl) SeekBufferAfterBlockEnds() int {
 }
 
 func (b BlockOl) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockOlLi{},
 	}
 }
@@ -1664,7 +1664,7 @@ func (b *BlockOl) GetRawContent() *string {
 type BlockOlLi struct {
 	BlockStruct
 	Indentation uint16
-	LineIndex int
+	LineIndex   int
 	TypeOfBlock BlockOlType
 }
 
@@ -1684,15 +1684,15 @@ func (b *BlockOlLi) CheckBlockStarts(line LineStruct) bool {
 	if line.RuneJ != 1 {
 		return false
 	}
-	if line.RuneContent[line.RuneJ - 1] >= rune('1') && line.RuneContent[line.RuneJ - 1] <= rune('9') {
+	if line.RuneContent[line.RuneJ-1] >= rune('1') && line.RuneContent[line.RuneJ-1] <= rune('9') {
 		b.TypeOfBlock = OlType_1
-	} else if line.RuneContent[line.RuneJ - 1] == rune('I') {
+	} else if line.RuneContent[line.RuneJ-1] == rune('I') {
 		b.TypeOfBlock = OlType_I
-	} else if line.RuneContent[line.RuneJ - 1] == rune('i') {
+	} else if line.RuneContent[line.RuneJ-1] == rune('i') {
 		b.TypeOfBlock = OlType_i
-	} else if line.RuneContent[line.RuneJ - 1] >= rune('A') && line.RuneContent[line.RuneJ - 1] <= rune('Z') { // excepts I
+	} else if line.RuneContent[line.RuneJ-1] >= rune('A') && line.RuneContent[line.RuneJ-1] <= rune('Z') { // excepts I
 		b.TypeOfBlock = OlType_A
-	} else if line.RuneContent[line.RuneJ - 1] >= rune('a') && line.RuneContent[line.RuneJ - 1] <= rune('z') { // excepts i
+	} else if line.RuneContent[line.RuneJ-1] >= rune('a') && line.RuneContent[line.RuneJ-1] <= rune('z') { // excepts i
 		b.TypeOfBlock = OlType_a
 	} else {
 		return false
@@ -1707,7 +1707,7 @@ func (b BlockOlLi) SeekBufferAfterBlockStarts() int {
 func (b *BlockOlLi) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = Pair[int, int]{
 		i: line.LineIndex,
-		j: line.RuneJ-2,
+		j: line.RuneJ - 2,
 	}
 	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
@@ -1729,11 +1729,11 @@ func (b *BlockOlLi) CheckBlockEndsNormally(line *LineStruct, parsing_stack Parsi
 		return aux.Indentation <= b.Indentation || aux.TypeOfBlock != b.TypeOfBlock, nil, 0
 	}
 	// Different indentation
-	return line.Indentation != b.Indentation + 3, nil, 0
+	return line.Indentation != b.Indentation+3, nil, 0
 }
 
 func (b BlockOlLi) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
-	return NewLines >= 1 && Indentation != b.Indentation + 3
+	return NewLines >= 1 && Indentation != b.Indentation+3
 }
 
 func (b *BlockOlLi) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -1749,7 +1749,7 @@ func (b BlockOlLi) SeekBufferAfterBlockEnds() int {
 }
 
 func (b BlockOlLi) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
@@ -1792,8 +1792,8 @@ func (b *BlockOlLi) GetRawContent() *string {
 type BlockFigure struct {
 	BlockStruct
 	MaxWidth string
-	Dock string
-	Padding string
+	Dock     string
+	Padding  string
 }
 
 func (b BlockFigure) String() string {
@@ -1876,7 +1876,7 @@ func (b BlockFigure) SeekBufferAfterBlockEnds() int {
 }
 
 func (b BlockFigure) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
@@ -1909,7 +1909,7 @@ func (b *BlockFigure) GetRawContent() *string {
 
 type BlockSubfigure struct {
 	BlockStruct
-	Source string
+	Source  string
 	Padding string
 }
 
@@ -1972,7 +1972,7 @@ func (b BlockSubfigure) SeekBufferAfterBlockEnds() int {
 }
 
 func (b BlockSubfigure) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
@@ -2064,7 +2064,7 @@ func (b BlockFootnote) SeekBufferAfterBlockEnds() int {
 }
 
 func (b BlockFootnote) GetBlocksAllowedInside() []BlockInterface {
-	return []BlockInterface {
+	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
@@ -2103,8 +2103,8 @@ func (b *BlockFootnote) GetRawContent() *string {
 
 type BlockRef struct {
 	BlockStruct
-	File string
-	RawContent string
+	File           string
+	RawContent     string
 	ReferenceIndex int
 }
 
@@ -2192,7 +2192,7 @@ func (b *BlockRef) GetRawContent() *string {
 
 type BlockBibliography struct {
 	BlockStruct
-	HTMLContent *string
+	HTMLContent  *string
 	LaTeXContent *string
 }
 

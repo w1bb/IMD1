@@ -32,7 +32,7 @@ func MDTreeFindElementsOfType[U any](tree *Tree[BlockInterface], x U) []U {
 	if reflect.TypeOf(tree.Value) == reflect.TypeOf(x) {
 		r = append(r, any(tree.Value).(U))
 	} else if reflect.TypeOf(tree.Value) == reflect.TypeOf(&BlockInline{}) &&
-			  reflect.TypeOf(tree.Value.(*BlockInline).Content) == reflect.TypeOf(x) {
+		reflect.TypeOf(tree.Value.(*BlockInline).Content) == reflect.TypeOf(x) {
 		r = append(r, any(tree.Value).(*BlockInline).Content.(U))
 	}
 	for i := 0; i < len(tree.Children); i++ {

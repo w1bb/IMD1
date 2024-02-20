@@ -32,7 +32,7 @@ import (
 // Parsing stack structure
 
 type ParsingStack struct {
-	InsideTextbox uint32
+	InsideTextbox   uint32
 	InsideParagraph uint32
 }
 
@@ -40,7 +40,7 @@ type ParsingStack struct {
 // Meta data structure
 
 type MDMetaStructure struct {
-	Author string
+	Author    string
 	Copyright string
 }
 
@@ -62,7 +62,7 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 	allowed_inside_block := current_block.Value.GetBlocksAllowedInside()
 
 	just_skipped := INF_BLANKS
-	for i := range(file.Lines) {
+	for i := range file.Lines {
 		if file.Lines[i].Empty() {
 			just_skipped++
 			continue
@@ -85,7 +85,7 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 					current_block.Value,
 					i, file.Lines[i].RuneJ,
 				)
-				
+
 				switch reflect.TypeOf(current_block.Value) {
 				case reflect.TypeOf(BlockParagraph{}):
 					parsing_stack.InsideParagraph--
@@ -117,7 +117,7 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 			// Check if we can open blocks
 			for found := true; found && file.Lines[i].RuneJ < len(file.Lines[i].RuneContent); {
 				found = false
-				for _, allowed := range(allowed_inside_block) {
+				for _, allowed := range allowed_inside_block {
 					if allowed.CheckBlockStarts(file.Lines[i]) && current_block.Value.AcceptBlockInside(allowed) {
 						file.Lines[i].RuneJ += allowed.SeekBufferAfterBlockStarts()
 						next_block := &(Tree[BlockInterface]{})
@@ -159,16 +159,16 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 		case reflect.TypeOf(BlockTextbox{}):
 			parsing_stack.InsideTextbox--
 		}
-		current_block.Value.ExecuteAfterBlockEnds(&file.Lines[len(file.Lines) - 1])
+		current_block.Value.ExecuteAfterBlockEnds(&file.Lines[len(file.Lines)-1])
 		current_block = current_block.Parent
 	}
 	current_block.Value.GetBlockStruct().ContentEnd = Pair[int, int]{
 		i: len(file.Lines) - 1,
-		j: len(file.Lines[len(file.Lines) - 1].RuneContent),
+		j: len(file.Lines[len(file.Lines)-1].RuneContent),
 	}
 
-	// Find first non-paragraph 
-	FirstNonParagraph := func (tree *Tree[BlockInterface], min_i int) int {
+	// Find first non-paragraph
+	FirstNonParagraph := func(tree *Tree[BlockInterface], min_i int) int {
 		for i := min_i; i < len(tree.Children); i++ {
 			if !tree.Children[i].Value.IsPartOfParagraph() {
 				return i
@@ -178,7 +178,7 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 	}
 
 	// Create the number of detected paragraphs
-	DetectParagraphs := func (before, after Pair[int, int], file *FileStruct) []BlockParagraph {
+	DetectParagraphs := func(before, after Pair[int, int], file *FileStruct) []BlockParagraph {
 		var paragraphs []BlockParagraph
 		var current_paragraph string
 
@@ -204,10 +204,10 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 					}
 					paragraphs = append(paragraphs, BlockParagraph{
 						BlockStruct: BlockStruct{
-							Start: before,
-							End: end,
+							Start:        before,
+							End:          end,
 							ContentStart: before,
-							ContentEnd: end,
+							ContentEnd:   end,
 						},
 					})
 					before = end
@@ -219,20 +219,20 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 	}
 
 	// Insert paragraphs
-	var InsertParagraphs func (*Tree[BlockInterface])
-	InsertParagraphs = func (tree *Tree[BlockInterface]) {
+	var InsertParagraphs func(*Tree[BlockInterface])
+	InsertParagraphs = func(tree *Tree[BlockInterface]) {
 
 		// Go deeper (TODO - multithreading)
-		for i := range(tree.Children) {
+		for i := range tree.Children {
 			if !tree.Children[i].Value.DigDeeperForParagraphs() {
-				continue;
+				continue
 			}
 			InsertParagraphs(tree.Children[i])
 		}
 
 		var before, after Pair[int, int]
 		before = tree.Value.GetBlockStruct().ContentStart
-		
+
 		starting_i := 0
 		for i := FirstNonParagraph(tree, 0); i != -1; i = FirstNonParagraph(tree, starting_i) {
 			after = tree.Children[i].Value.GetBlockStruct().Start
@@ -240,20 +240,19 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 			if p := DetectParagraphs(before, after, &file); p != nil {
 				log.Debug("Detected paragraph between ", before, " and ", after, ": ", p)
 				generated_p := make([]*Tree[BlockInterface], len(p))
-				for j := range(p) {
+				for j := range p {
 					generated_p[j] = new(Tree[BlockInterface])
 					generated_p[j].Parent = tree
 					generated_p[j].Value = &p[j]
 				}
 				for ci, j := starting_i, 0; ci < i && j < len(p); ci++ {
-					for cbs := tree.Children[ci].Value.GetBlockStruct();
-						cbs.Start.i > p[j].ContentEnd.i; j++ {
+					for cbs := tree.Children[ci].Value.GetBlockStruct(); cbs.Start.i > p[j].ContentEnd.i; j++ {
 					}
 					tree.Children[ci].Parent = generated_p[j]
 					generated_p[j].Children = append(generated_p[j].Children, tree.Children[ci])
 				}
 				// Remove old blocks
-				aux := make([]*Tree[BlockInterface], len(p) + len(tree.Children) - (i - starting_i))
+				aux := make([]*Tree[BlockInterface], len(p)+len(tree.Children)-(i-starting_i))
 				copy(aux[:starting_i], tree.Children[:starting_i])
 				copy(aux[starting_i:starting_i+len(p)], generated_p)
 				copy(aux[starting_i+len(p):], tree.Children[i:])
@@ -263,25 +262,24 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 			starting_i++
 			before = next_before
 		}
-		
+
 		after = tree.Value.GetBlockStruct().ContentEnd
 		if p := DetectParagraphs(before, after, &file); p != nil {
 			log.Debug("Detected paragraph between ", before, " and ", after, ": ", p)
 			generated_p := make([]*Tree[BlockInterface], len(p))
-			for j := range(p) {
+			for j := range p {
 				generated_p[j] = new(Tree[BlockInterface])
 				generated_p[j].Parent = tree
 				generated_p[j].Value = &p[j]
 			}
 			for ci, j := starting_i, 0; ci < len(tree.Children) && j < len(p); ci++ {
-				for cbs := tree.Children[ci].Value.GetBlockStruct();
-					cbs.Start.i > p[j].ContentEnd.i; j++ {
+				for cbs := tree.Children[ci].Value.GetBlockStruct(); cbs.Start.i > p[j].ContentEnd.i; j++ {
 				}
 				tree.Children[ci].Parent = generated_p[j]
 				generated_p[j].Children = append(generated_p[j].Children, tree.Children[ci])
 			}
 			// Remove old blocks
-			aux := make([]*Tree[BlockInterface], len(p) + len(tree.Children) - (len(tree.Children) - starting_i))
+			aux := make([]*Tree[BlockInterface], len(p)+len(tree.Children)-(len(tree.Children)-starting_i))
 			copy(aux[:starting_i], tree.Children[:starting_i])
 			copy(aux[starting_i:starting_i+len(p)], generated_p)
 			copy(aux[starting_i+len(p):], tree.Children[len(tree.Children):])
@@ -341,9 +339,9 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 					continue
 				}
 				CompleteBibinfo[new_bibinfo_key] = BibliographyEntry{
-					ParentBlock: new_bibinfo_value.ParentBlock,
-					Type: new_bibinfo_value.Type,
-					Fields: new_bibinfo_value.Fields,
+					ParentBlock:    new_bibinfo_value.ParentBlock,
+					Type:           new_bibinfo_value.Type,
+					Fields:         new_bibinfo_value.Fields,
 					ReferenceIndex: CompleteBibinfoNextRefIndex,
 				}
 				CompleteBibinfoNextRefIndex++
@@ -405,15 +403,15 @@ func (t BibliographyEntryType) String() string {
 }
 
 type BibliographyEntryFields struct {
-	Title *string
-	Author *string
-	Journal *string
-	Volume *string
-	Number *string
-	Pages *string
-	Year *string
+	Title     *string
+	Author    *string
+	Journal   *string
+	Volume    *string
+	Number    *string
+	Pages     *string
+	Year      *string
 	Publisher *string
-	URL *string
+	URL       *string
 }
 
 func (f BibliographyEntryFields) String() string {
@@ -452,9 +450,9 @@ func (f BibliographyEntryFields) String() string {
 }
 
 type BibliographyEntry struct {
-	ParentBlock *BlockMetaBibinfo
-	Type BibliographyEntryType
-	Fields BibliographyEntryFields
+	ParentBlock    *BlockMetaBibinfo
+	Type           BibliographyEntryType
+	Fields         BibliographyEntryFields
 	ReferenceIndex int
 }
 
@@ -619,7 +617,7 @@ func GenerateBibliography(mp map[string]BibliographyEntry) string {
 
 		sb.WriteString("<div class=\"bib-entry-text-wrapper\">")
 		sb.WriteString("<div class=\"bib-entry-text\">")
-		
+
 		{
 			// Author
 			if value.Fields.Author != nil {
@@ -700,14 +698,13 @@ func CleanupSingleBlockInline(content_tree *Tree[BlockInterface]) *Tree[BlockInt
 	cleaned_content_tree := &Tree[BlockInterface]{
 		Parent: content_tree.Parent,
 		Value: &BlockInline{
-			Content: &InlineDocument{
-			},
+			Content: &InlineDocument{},
 		},
 	}
 	for i := 0; i < len(content_tree.Children); i++ {
 		var sr string = ""
 		j := i
-		digging:
+	digging:
 		for ; j < len(content_tree.Children); j++ {
 			if reflect.TypeOf(content_tree.Children[j].Value) != reflect.TypeOf(&BlockInline{}) {
 				break
@@ -769,8 +766,7 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 	content_tree := &Tree[BlockInterface]{
 		Parent: tree,
 		Value: &BlockInline{
-			Content: &InlineDocument{
-			},
+			Content: &InlineDocument{},
 		},
 	}
 
@@ -795,7 +791,7 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 				is_href = true
 			}
 		}
-		
+
 		if !is_raw {
 			ParagraphInsertRawHelper(content_tree, &current_string)
 			tree_child.Parent = content_tree
@@ -884,7 +880,7 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 								Value: &BlockInline{
 									Content: mod,
 								},
-								Children: make([]*Tree[BlockInterface], len(content_tree.Children) - (i+1)),
+								Children: make([]*Tree[BlockInterface], len(content_tree.Children)-(i+1)),
 							}
 							for j := 0; j < len(mod_tree.Children); j++ {
 								mod_tree.Children[j] = content_tree.Children[j+i+1]
@@ -903,7 +899,7 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 						}
 						if delim_count > 0 {
 							delimiter_stack.Push(InlineDelimiter{
-								Type: tt,
+								Type:  tt,
 								Count: delim_count,
 							})
 							for ; delim_count > 0; delim_count-- {
@@ -919,10 +915,10 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 									})
 							}
 						}
-						case '\\':
-							is_escaped = true
-						default:
-							current_string += string(c)
+					case '\\':
+						is_escaped = true
+					default:
+						current_string += string(c)
 					}
 				}
 			}
@@ -933,17 +929,19 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 }
 
 const (
-	PDM_LinkState_Start = 1
+	PDM_LinkState_Start                = 1
 	PDM_LinkState_Text_Last_Sq_Bracket = 2
-	PDM_LinkState_Text_Last_Space = 3
-	PDM_LinkState_Link = 4
+	PDM_LinkState_Text_Last_Space      = 3
+	PDM_LinkState_Link                 = 4
 )
 
 type PDM_LinkState_Char int
+
 const (
 	PDM_LinkState_Char_Bracket PDM_LinkState_Char = iota
 	PDM_LinkState_Char_Parant
 )
+
 func (c PDM_LinkState_Char) String() string {
 	switch c {
 	case PDM_LinkState_Char_Bracket:
@@ -951,7 +949,7 @@ func (c PDM_LinkState_Char) String() string {
 	case PDM_LinkState_Char_Parant:
 		return "]"
 	default:
-		panic(nil) // This should never be reached		
+		panic(nil) // This should never be reached
 	}
 }
 
@@ -961,25 +959,21 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 	content_tree := &Tree[BlockInterface]{
 		Parent: tree,
 		Value: &BlockInline{
-			Content: &InlineDocument{
-			},
+			Content: &InlineDocument{},
 		},
 	}
 
 	current_string := ""
 	is_escaped := false
-	// stack_level := 0
-
-	
 
 	PDM_State := PDM_LinkState_Start
 	var PDM_Stack Stack[Pair[PDM_LinkState_Char, int]]
 	PDM_text_begin := -1
 
-	for current, expected_child_i := (Pair[int, int]{i: p.ContentStart.i, j: p.ContentStart.j-1}), 0;; {
+	for current, expected_child_i := (Pair[int, int]{i: p.ContentStart.i, j: p.ContentStart.j - 1}), 0; ; {
 		current.j++
 		if current.j >= len(file.Lines[current.i].RuneContent) {
-			if current_string != "" && current_string[len(current_string) - 1] != ' ' {
+			if current_string != "" && current_string[len(current_string)-1] != ' ' {
 				current_string += " "
 			}
 			current.j = 0
@@ -999,7 +993,7 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 				is_part_of_other_child = true
 			}
 		}
-		
+
 		if is_part_of_other_child {
 			ParagraphInsertRawHelper(content_tree, &current_string)
 			tree_child := tree.Children[expected_child_i]
@@ -1118,8 +1112,6 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 					if (PDM_Stack.Empty() || PDM_Stack.Size() > 0 && PDM_Stack.Top().i != PDM_LinkState_Char_Parant) && PDM_State == PDM_LinkState_Link {
 						PDM_Stack.Clear()
 
-						// PDM_text_begin
-						
 						a := new(InlineHref)
 						a.Address = current_string[2:]
 						a_tree := &Tree[BlockInterface]{
@@ -1127,7 +1119,7 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 							Value: &BlockInline{
 								Content: a,
 							},
-							Children: make([]*Tree[BlockInterface], len(content_tree.Children) - (PDM_text_begin + 1)),
+							Children: make([]*Tree[BlockInterface], len(content_tree.Children)-(PDM_text_begin+1)),
 						}
 						for j := 0; j < len(a_tree.Children); j++ { // TODO - could use cleanup instead of this
 							was_inline_string_delimiter := false

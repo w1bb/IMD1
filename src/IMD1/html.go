@@ -549,8 +549,8 @@ func GenerateHTML(tree *Tree[BlockInterface]) string {
 		return "" // Just to be sure
 	}
 	var s strings.Builder
-	var GenerateHTMLHelper func (tree *Tree[BlockInterface], sb *strings.Builder)
-	GenerateHTMLHelper = func (tree *Tree[BlockInterface], sb *strings.Builder) {
+	var GenerateHTMLHelper func(tree *Tree[BlockInterface], sb *strings.Builder)
+	GenerateHTMLHelper = func(tree *Tree[BlockInterface], sb *strings.Builder) {
 		sb.WriteString(tree.Value.GenerateHTMLTagPrefix())
 		for i := 0; i < len(tree.Children); i++ {
 			GenerateHTMLHelper(tree.Children[i], sb)
