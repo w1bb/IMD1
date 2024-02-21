@@ -318,6 +318,28 @@ func (b *BlockSubfigure) GenerateLaTeXTagSuffix() string {
 }
 
 // =====================================
+// Tabs LaTeX interface
+
+func (b *BlockTabs) GenerateLaTeXTagPrefix() string {
+	return "{" // TODO
+}
+
+func (b *BlockTabs) GenerateLaTeXTagSuffix() string {
+	return "}"
+}
+
+// =====================================
+// Tab LaTeX interface
+
+func (b *BlockTabsTab) GenerateLaTeXTagPrefix() string {
+	return "{" // TODO
+}
+
+func (b *BlockTabsTab) GenerateLaTeXTagSuffix() string {
+	return "}"
+}
+
+// =====================================
 // Footnote LaTeX interface
 
 func (b *BlockFootnote) GenerateLaTeXTagPrefix() string {

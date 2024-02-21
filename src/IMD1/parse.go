@@ -298,6 +298,7 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 	var DFSNodeParse func(tree *Tree[BlockInterface])
 	RefBlocks := make([]*BlockRef, 0)
 	BibliographyBlocks := make([]*BlockBibliography, 0)
+	TabsBlocks := make([]*BlockTabs, 0)
 	DFSNodeParse = func(tree *Tree[BlockInterface]) {
 		if rc := tree.Value.GetRawContent(); rc != nil && *rc == "" {
 			bs := tree.Value.GetBlockStruct()
@@ -350,6 +351,17 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 			RefBlocks = append(RefBlocks, tree.Value.(*BlockRef))
 		case reflect.TypeOf(&BlockBibliography{}):
 			BibliographyBlocks = append(BibliographyBlocks, tree.Value.(*BlockBibliography))
+		case reflect.TypeOf(&BlockTabsTab{}):
+			// Sanity check
+			if reflect.TypeOf(tree.Parent.Value) != reflect.TypeOf(&BlockTabs{}) {
+				panic(nil)
+			}
+			tabs := tree.Parent.Value.(*BlockTabs)
+			tabs_tab := tree.Value.(*BlockTabsTab)
+			tabs.Tabs = append(tabs.Tabs, tabs_tab)
+		case reflect.TypeOf(&BlockTabs{}):
+			tabs := tree.Value.(*BlockTabs)
+			TabsBlocks = append(TabsBlocks, tabs)
 		}
 
 		for i := 0; i < len(tree.Children); i++ {
@@ -373,6 +385,18 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 	bibliography_html_text := GenerateBibliography(CompleteBibinfo)
 	for i := 0; i < len(BibliographyBlocks); i++ {
 		BibliographyBlocks[i].HTMLContent = &bibliography_html_text
+	}
+
+	// Set selected tabs
+	for i := 0; i < len(TabsBlocks); i++ {
+		if len(TabsBlocks[i].Tabs) <= TabsBlocks[i].SelectedIndex {
+			log.Warnf(
+				"The selected index (%v) for a |tabs> element is too large. Will reset to 0...",
+				TabsBlocks[i].SelectedIndex,
+			)
+			TabsBlocks[i].SelectedIndex = 0
+		}
+		TabsBlocks[i].Tabs[TabsBlocks[i].SelectedIndex].IsSelected = true
 	}
 
 	return *current_block, md_meta

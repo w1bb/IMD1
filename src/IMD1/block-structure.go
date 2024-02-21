@@ -20,6 +20,7 @@ package main
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -114,6 +115,7 @@ func (b BlockDocument) GetBlocksAllowedInside() []BlockInterface {
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
+		&BlockTabs{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
@@ -560,6 +562,7 @@ func (b BlockTextboxContent) GetBlocksAllowedInside() []BlockInterface {
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
+		&BlockTabs{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
@@ -1495,6 +1498,7 @@ func (b BlockUlLi) GetBlocksAllowedInside() []BlockInterface {
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
+		&BlockTabs{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
@@ -1753,6 +1757,7 @@ func (b BlockOlLi) GetBlocksAllowedInside() []BlockInterface {
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
+		&BlockTabs{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
@@ -2002,6 +2007,200 @@ func (b *BlockSubfigure) GetBlockStruct() *BlockStruct {
 }
 
 func (b *BlockSubfigure) GetRawContent() *string {
+	return nil
+}
+
+// =====================================
+// Tabs
+
+type BlockTabs struct {
+	BlockStruct
+	Tabs   []*BlockTabsTab
+	SelectedIndex int
+}
+
+func (b BlockTabs) String() string {
+	return fmt.Sprintf(
+		"BlockTabs (tabs=%v), %v",
+		b.Tabs,
+		b.BlockStruct.String(),
+	)
+}
+
+func (b *BlockTabs) CheckBlockStarts(line LineStruct) bool {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|tabs>")
+}
+
+func (b BlockTabs) SeekBufferAfterBlockStarts() int {
+	return 1
+}
+
+func (b *BlockTabs) ExecuteAfterBlockStarts(line *LineStruct) {
+	b.Start = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ - 6,
+	}
+	options := GatherBlockOptions(line, []string{"selected"})
+	if value, ok := options["selected"]; ok {
+		value_int, err := strconv.Atoi(value)
+		if err != nil || value_int < 0 {
+			log.Warnf("Could not use tabs option [selected=%v]. Please use natural numbers", value)
+		}
+		b.SelectedIndex = value_int
+	}
+	b.ContentStart = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+}
+
+func (b *BlockTabs) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<tabs|"), nil, 0
+}
+
+func (b BlockTabs) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+	return false
+}
+
+func (b *BlockTabs) ExecuteAfterBlockEnds(line *LineStruct) {
+	b.End = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+	b.ContentEnd = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ - 6,
+	}
+}
+
+func (b BlockTabs) SeekBufferAfterBlockEnds() int {
+	return 1
+}
+
+func (b BlockTabs) GetBlocksAllowedInside() []BlockInterface {
+	return []BlockInterface{
+		&BlockComment{},
+		&BlockHTML{},
+		&BlockLaTeX{},
+		&BlockTabsTab{},
+	}
+}
+
+func (b BlockTabs) AcceptBlockInside(other BlockInterface) bool {
+	return true
+}
+
+func (b BlockTabs) IsPartOfParagraph() bool {
+	return false
+}
+
+func (b BlockTabs) DigDeeperForParagraphs() bool {
+	return true
+}
+
+func (b *BlockTabs) GetBlockStruct() *BlockStruct {
+	return &b.BlockStruct
+}
+
+func (b *BlockTabs) GetRawContent() *string {
+	return nil
+}
+
+// =====================================
+// Subfigures
+
+type BlockTabsTab struct {
+	BlockStruct
+	Name string
+	IsSelected bool
+}
+
+func (b BlockTabsTab) String() string {
+	return fmt.Sprintf(
+		"BlockTabsTab (name=%v), %v",
+		b.Name,
+		b.BlockStruct.String(),
+	)
+}
+
+func (b *BlockTabsTab) CheckBlockStarts(line LineStruct) bool {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|tab>")
+}
+
+func (b BlockTabsTab) SeekBufferAfterBlockStarts() int {
+	return 1
+}
+
+func (b *BlockTabsTab) ExecuteAfterBlockStarts(line *LineStruct) {
+	b.Start = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ - 5,
+	}
+	options := GatherBlockOptions(line, []string{"name"})
+	if value, ok := options["name"]; ok {
+		b.Name = value
+	}
+	b.ContentStart = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+}
+
+func (b *BlockTabsTab) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<tab|"), nil, 0
+}
+
+func (b *BlockTabsTab) ExecuteAfterBlockEnds(line *LineStruct) {
+	b.End = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+	b.ContentEnd = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ - 5,
+	}
+}
+
+func (b BlockTabsTab) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+	return false
+}
+
+func (b BlockTabsTab) SeekBufferAfterBlockEnds() int {
+	return 1
+}
+
+func (b BlockTabsTab) GetBlocksAllowedInside() []BlockInterface {
+	return []BlockInterface{
+		&BlockComment{},
+		&BlockHTML{},
+		&BlockLaTeX{},
+		&BlockTabs{},
+		&BlockCodeListing{},
+		&BlockInlineCodeListing{},
+		&BlockMath{},
+		&BlockInlineMath{},
+		&BlockFootnote{},
+		&BlockRef{},
+	}
+}
+
+func (b BlockTabsTab) AcceptBlockInside(other BlockInterface) bool {
+	return true
+}
+
+func (b BlockTabsTab) IsPartOfParagraph() bool {
+	return false
+}
+
+func (b BlockTabsTab) DigDeeperForParagraphs() bool {
+	return true
+}
+
+func (b *BlockTabsTab) GetBlockStruct() *BlockStruct {
+	return &b.BlockStruct
+}
+
+func (b *BlockTabsTab) GetRawContent() *string {
 	return nil
 }
 

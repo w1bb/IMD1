@@ -364,6 +364,51 @@ func (b *BlockSubfigure) GenerateHTMLTagSuffix() string {
 }
 
 // =====================================
+// Tabs HTML interface
+
+func (b *BlockTabs) GenerateHTMLTagPrefix() string {
+	r := "\n<div class=\"tabs\">\n"
+	r += "<div class=\"tabs-select\">"
+	if b.SelectedIndex >= len(b.Tabs) {
+		log.Warnf("The selected index for a |tabs> element is too large. Will reset to 0...")
+		b.SelectedIndex = 0
+	}
+	for i := 0; i < len(b.Tabs); i++ {
+		r += "<div class=\"tab-opt"
+		if i == b.SelectedIndex {
+			r += " selected\">"
+		} else {
+			r += "\">"
+		}
+		r += b.Tabs[i].Name
+		r += "</div>"
+	}
+	r += "</div>\n"
+	return r
+}
+
+func (b *BlockTabs) GenerateHTMLTagSuffix() string {
+	return "</div>\n"
+}
+
+// =====================================
+// Tab HTML interface
+
+func (b *BlockTabsTab) GenerateHTMLTagPrefix() string {
+	r := "<div class=\"tab-content"
+	if b.IsSelected {
+		r += " selected\">"
+	} else {
+		r += "\">"
+	}
+	return r
+}
+
+func (b *BlockTabsTab) GenerateHTMLTagSuffix() string {
+	return "</div>\n"
+}
+
+// =====================================
 // Footnote HTML interface
 
 func (b *BlockFootnote) GenerateHTMLTagPrefix() string {
