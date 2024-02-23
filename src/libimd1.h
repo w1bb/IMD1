@@ -19,6 +19,10 @@ typedef struct { const char *p; ptrdiff_t n; } _GoString_;
 /* Start of preamble from import "C" comments.  */
 
 
+#line 20 "api.go"
+#include <stdlib.h>
+
+#line 1 "cgo-generated-wrapper"
 
 
 /* End of preamble from import "C" comments.  */
@@ -74,10 +78,14 @@ typedef struct { void *data; GoInt len; GoInt cap; } GoSlice;
 extern "C" {
 #endif
 
-extern void C_IMD1_MDFileToHTMLFile(char* c_md_filename, char* c_html_filename);
-extern void C_IMD1_MDToHTMLFile(char* c_s, char* c_html_filename);
-extern char* C_IMD1_MDFileToHTML(char* c_md_filename);
-extern char* C_IMD1_MDToHTML(char* c_s);
+extern void C_FreeUnsafePointer(void* p);
+
+/* Return type for C_IMD1_MDToHTML */
+struct C_IMD1_MDToHTML_return {
+	char* r0;
+	void* r1;
+};
+extern struct C_IMD1_MDToHTML_return C_IMD1_MDToHTML(char* c_s);
 extern void C_IMD1_MDFileToLaTeXFile(char* c_md_filename, char* c_latex_filename);
 extern void C_IMD1_MDToLaTeXFile(char* c_s, char* c_latex_filename);
 extern char* C_IMD1_MDFileToLaTeX(char* c_md_filename);

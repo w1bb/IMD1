@@ -52,6 +52,13 @@ func (m MDMetaStructure) String() string {
 	)
 }
 
+func (m MDMetaStructure) Serialize() []byte {
+	r := make([]byte, 0)
+	r = append(r, StringSerialize(m.Author)...)
+	r = append(r, StringSerialize(m.Copyright)...)
+	return r
+}
+
 // =====================================
 // Tree parse
 

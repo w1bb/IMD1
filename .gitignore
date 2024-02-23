@@ -7,6 +7,9 @@ src/IMD1/output.html
 src/IMD1/test.md
 src/IMD1/test.html
 
+src/py_imd1/__pycache__
+src/py_imd1/imd12.py
+
 examples/01-hello-world/libimd1.h
 examples/01-hello-world/libimd1.so
 examples/01-hello-world/hello

@@ -18,74 +18,50 @@
 import ctypes
 import os
 
+class IMD1:
+    def __init__(self):
+        self.html = None
+        self.meta = None
 
+        current_file_path = os.path.abspath(__file__)
+        current_folder_path = os.path.dirname(current_file_path)
+        lib_path = os.path.join(current_folder_path, "libimd1.so")
+        self.__imd1_lib_so = ctypes.cdll.LoadLibrary(lib_path)
 
-# =====================================
-# Load the library
+        self.__imd1_lib_so.C_FreeUnsafePointer.argtypes = [ctypes.c_void_p]
+        # self.__imd1_lib_so.C_IMD1_MDFileToHTMLFile.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+        # self.__imd1_lib_so.C_IMD1_MDFileToHTMLFile.restype = ctypes.c_void_p
+        # self.__imd1_lib_so.C_IMD1_MDToHTMLFile.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+        # self.__imd1_lib_so.C_IMD1_MDToHTMLFile.restype = ctypes.c_void_p
+        # class __C_IMD1_MDFileToHTML_return(ctypes.Structure):
+        #     _fields_ = [('r0', ctypes.c_char_p),
+        #                 ('r1', ctypes.c_void_p)]
+        # self.__imd1_lib_so.C_IMD1_MDFileToHTML.argtypes = [ctypes.c_char_p]
+        # self.__imd1_lib_so.C_IMD1_MDFileToHTML.restype = __C_IMD1_MDFileToHTML_return
+        class __C_IMD1_MDToHTML_return(ctypes.Structure):
+            _fields_ = [('r0', ctypes.c_char_p),
+                        ('r1', ctypes.c_void_p)]
+        self.__imd1_lib_so.C_IMD1_MDToHTML.argtypes = [ctypes.c_char_p]
+        self.__imd1_lib_so.C_IMD1_MDToHTML.restype = __C_IMD1_MDToHTML_return
 
-current_file_path = os.path.abspath(__file__)
-current_folder_path = os.path.dirname(current_file_path)
-lib_path = os.path.join(current_folder_path, "libimd1.so")
-imd1_lib_so = ctypes.cdll.LoadLibrary(lib_path)
-
-
-
-# =====================================
-# Markdown to HTML (Python, from C-exported variants)
-
-imd1_lib_so.C_IMD1_MDFileToHTMLFile.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
-def Py_IMD1_MDFileToHTMLFile(py_md_filename, py_html_filename):
-    c_md_filename = py_md_filename.encode('utf-8')
-    c_html_filename = py_html_filename.encode('utf-8')
-    imd1_lib_so.C_IMD1_MDFileToHTMLFile(c_md_filename, c_html_filename)
-
-imd1_lib_so.C_IMD1_MDToHTMLFile.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
-def Py_IMD1_MDToHTMLFile(py_s, py_html_filename):
-    c_s = py_s.encode('utf-8')
-    c_html_filename = py_html_filename.encode('utf-8')
-    imd1_lib_so.C_IMD1_MDToHTMLFile(c_s, c_html_filename)
-
-imd1_lib_so.C_IMD1_MDFileToHTML.argtypes = [ctypes.c_char_p]
-imd1_lib_so.C_IMD1_MDFileToHTML.restype = ctypes.c_char_p
-def Py_IMD1_MDFileToHTML(py_md_filename):
-    c_md_filename = py_md_filename.encode('utf-8')
-    c_ret = imd1_lib_so.C_IMD1_MDFileToHTML(c_md_filename)
-    return ctypes.string_at(c_ret).decode('utf-8')
-
-imd1_lib_so.C_IMD1_MDToHTML.argtypes = [ctypes.c_char_p]
-imd1_lib_so.C_IMD1_MDToHTML.restype = ctypes.c_char_p
-def Py_IMD1_MDToHTML(py_s):
-    c_s = py_s.encode('utf-8')
-    c_ret = imd1_lib_so.C_IMD1_MDToHTML(c_s)
-    return ctypes.string_at(c_ret).decode('utf-8')
-
-
-
-# =====================================
-# Markdown to LaTeX (Python, from C-exported variants)
-
-imd1_lib_so.C_IMD1_MDFileToLaTeXFile.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
-def Py_IMD1_MDFileToLaTeXFile(py_md_filename, py_latex_filename):
-    c_md_filename = py_md_filename.encode('utf-8')
-    c_latex_filename = py_latex_filename.encode('utf-8')
-    imd1_lib_so.C_IMD1_MDFileToLaTeXFile(c_md_filename, c_latex_filename)
-
-imd1_lib_so.C_IMD1_MDToLaTeXFile.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
-def Py_IMD1_MDToLaTeXFile(py_s, py_latex_filename):
-    c_s = py_s.encode('utf-8')
-    c_latex_filename = py_latex_filename.encode('utf-8')
-    imd1_lib_so.C_IMD1_MDToLaTeXFile(c_s, c_latex_filename)
-
-imd1_lib_so.C_IMD1_MDFileToLaTeX.argtypes = [ctypes.c_char_p]
-imd1_lib_so.C_IMD1_MDFileToLaTeX.restype = ctypes.c_char_p
-def Py_IMD1_MDFileToLaTeX(py_md_filename):
-    c_md_filename = py_md_filename.encode('utf-8')
-    c_ret = imd1_lib_so.C_IMD1_MDFileToLaTeX(c_md_filename)
-    return ctypes.string_at(c_ret).decode('utf-8')
-
-imd1_lib_so.C_IMD1_MDToLaTeX.argtypes = [ctypes.c_char_p]
-imd1_lib_so.C_IMD1_MDToLaTeX.restype = ctypes.c_char_p
-def Py_IMD1_MDToLaTeX(py_s):
-    c_s = py_s.encode('utf-8')
-    c_ret = imd1_lib_so.C_IMD1_MDToLaTeX(c_s)
-    return ctypes.string_at(c_ret).decode('utf-8')
+    def __fill_meta(self, buffer):
+        b = ctypes.cast(buffer, ctypes.c_void_p).value
+        self.meta = {}
+        author_len = ctypes.c_uint32.from_address(b).value
+        if author_len > 0:
+            self.meta["author"] = ctypes.string_at(b+4, author_len).decode('utf-8')
+        b += 4 + author_len
+        copyright_len = ctypes.c_uint32.from_address(b).value
+        if copyright_len > 0:
+            self.meta["copyright"] = ctypes.string_at(b+4, copyright_len).decode('utf-8')
+    
+    def md_to_html(self, md_string):
+        c_s = md_string.encode('utf-8')
+        c_ret = self.__imd1_lib_so.C_IMD1_MDToHTML(c_s)
+        self.html = ctypes.string_at(c_ret.r0).decode('utf-8')
+        self.__fill_meta(c_ret.r1)
+        self.__imd1_lib_so.C_FreeUnsafePointer(c_ret.r1)
+    
+    def reset(self):
+        self.html = None
+        self.meta = None

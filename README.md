@@ -1,7 +1,7 @@
 <div align="center">
 <h1>IMD1</h1>
 
-![version](https://img.shields.io/badge/version-0.6-orange?style=flat)
+![version](https://img.shields.io/badge/version-0.8-orange?style=flat)
 [![License](https://img.shields.io/badge/license-GPL--3.0-red?style=flat)](/LICENSE)
 ![docs](https://img.shields.io/badge/docs-50%25-blueviolet?style=flat)
 ![stars](https://img.shields.io/github/stars/w1bb/IMD1)
@@ -36,6 +36,7 @@ Table of contents
     - [Textboxes](#textboxes)
     - [Figures and subfigures](#figures-and-subfigures)
     - [Tabs](#tabs)
+    - [Tables](#tables)
     - [Footnotes](#footnotes)
     - [Metadata](#metadata)
     - [Bibliography](#bibliography)
@@ -207,6 +208,10 @@ You will now be able to specify a title (`|title>..<title|`) and some content (`
 
 _Note: Previous versions did not use the `|title>` and `|content>` tags. Instead, you had to specify the title using the `[title=..]` option. The reason this was changed is because you could only insert unformatable text for the title due to the way options are parsed by the compiler._
 
+### Toggles
+
+TODO - the code is incomplete
+
 ### Figures and subfigures
 
 The original Markdown format allows for images to be included using the `![alt](link "title")` format. However, IMD1 opts for both an easier to parse and more powerful approach.
@@ -241,7 +246,11 @@ Please note that, in order for this to get rendered correctly, some CSS has to b
 
 ### Tabs
 
-TODO - incomplete
+TODO - the code is complete, docs need to be written
+
+### Tables
+
+TODO - the code is incomplete
 
 ### Footnotes
 
@@ -355,6 +364,8 @@ Finally, there are **comments**. These work in the same way HTML comments would,
 TODO
 
 ### Exposed API
+
+**TODO - this whole section needs an update!**
 
 As I've already [stated above](#use-as-a-standalone-library), some of the functions have been exposed as C variants that can be called outside of Golang.
 

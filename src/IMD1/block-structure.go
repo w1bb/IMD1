@@ -597,6 +597,96 @@ func (b *BlockTextboxContent) GetRawContent() *string {
 }
 
 // =====================================
+// Toggles
+
+type BlockToggle struct {
+	BlockStruct
+	Class string
+}
+
+func (b BlockToggle) String() string {
+	return fmt.Sprintf(
+		"BlockToggle (class=%v), %v",
+		b.Class,
+		b.BlockStruct.String(),
+	)
+}
+
+func (b *BlockToggle) CheckBlockStarts(line LineStruct) bool {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|toggle>")
+}
+
+func (b BlockToggle) SeekBufferAfterBlockStarts() int {
+	return 1
+}
+
+func (b *BlockToggle) ExecuteAfterBlockStarts(line *LineStruct) {
+	b.Start = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ - 8,
+	}
+	options := GatherBlockOptions(line, []string{"class"})
+	if value, ok := options["class"]; ok {
+		b.Class = value
+	}
+	b.ContentStart = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+}
+
+func (b *BlockToggle) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<toggle|"), nil, 0
+}
+
+func (b BlockToggle) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+	return false
+}
+
+func (b *BlockToggle) ExecuteAfterBlockEnds(line *LineStruct) {
+	b.End = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+	b.ContentEnd = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ - 8,
+	}
+}
+
+func (b BlockToggle) SeekBufferAfterBlockEnds() int {
+	return 1
+}
+
+func (b BlockToggle) GetBlocksAllowedInside() []BlockInterface {
+	return []BlockInterface{
+		&BlockComment{},
+		&BlockTextboxTitle{},
+		&BlockTextboxContent{},
+	}
+}
+
+func (b BlockToggle) AcceptBlockInside(other BlockInterface) bool {
+	return true
+}
+
+func (b BlockToggle) IsPartOfParagraph() bool {
+	return false
+}
+
+func (b BlockToggle) DigDeeperForParagraphs() bool {
+	return true
+}
+
+func (b *BlockToggle) GetBlockStruct() *BlockStruct {
+	return &b.BlockStruct
+}
+
+func (b *BlockToggle) GetRawContent() *string {
+	return nil
+}
+
+// =====================================
 // HTML code
 
 type BlockComment struct {

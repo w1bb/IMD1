@@ -17,18 +17,28 @@
 
 package main
 
+//#include <stdlib.h>
 import "C"
 import (
 	"os"
 	"time"
+	"unsafe"
 
 	log "github.com/sirupsen/logrus"
 )
 
 // =====================================
+// Unsafe pointer (void*) free (C only)
+
+//export C_FreeUnsafePointer
+func C_FreeUnsafePointer(p unsafe.Pointer) {
+	C.free(p)
+}
+
+// =====================================
 // Markdown to HTML (Go)
 
-func IMD1_MDToHTMLHelper(file FileStruct) string {
+func IMD1_MDToHTMLHelper(file FileStruct) (string, []byte) {
 	start_time := time.Now()
 	tree, metadata := file.MDParse()
 	end_time := time.Now()
@@ -40,14 +50,14 @@ func IMD1_MDToHTMLHelper(file FileStruct) string {
 	html := GenerateHTML(&tree)
 	end_time = time.Now()
 	log.Infof("Generating the HTML took %v", end_time.Sub(start_time))
-	return html
+	return html, metadata.Serialize()
 }
 
-func IMD1_MDFileToHTMLFile(md_filename string, html_filename string) {
+func IMD1_MDFileToHTMLFile(md_filename string, html_filename string) []byte {
 	var file FileStruct
 	file.ReadFile(md_filename)
 
-	html := IMD1_MDToHTMLHelper(file)
+	html, serial_metadata := IMD1_MDToHTMLHelper(file)
 
 	fout, err := os.Create(html_filename)
 	if err != nil {
@@ -55,13 +65,15 @@ func IMD1_MDFileToHTMLFile(md_filename string, html_filename string) {
 	}
 	fout.WriteString(html)
 	fout.Close()
+
+	return serial_metadata
 }
 
-func IMD1_MDToHTMLFile(s string, html_filename string) {
+func IMD1_MDToHTMLFile(s string, html_filename string) []byte {
 	var file FileStruct
 	file.ReadString(s)
 
-	html := IMD1_MDToHTMLHelper(file)
+	html, serial_metadata := IMD1_MDToHTMLHelper(file)
 
 	fout, err := os.Create(html_filename)
 	if err != nil {
@@ -69,16 +81,18 @@ func IMD1_MDToHTMLFile(s string, html_filename string) {
 	}
 	fout.WriteString(html)
 	fout.Close()
+
+	return serial_metadata
 }
 
-func IMD1_MDFileToHTML(md_filename string) string {
+func IMD1_MDFileToHTML(md_filename string) (string,  []byte) {
 	var file FileStruct
 	file.ReadFile(md_filename)
 
 	return IMD1_MDToHTMLHelper(file)
 }
 
-func IMD1_MDToHTML(s string) string {
+func IMD1_MDToHTML(s string) (string,  []byte) {
 	var file FileStruct
 	file.ReadString(s)
 
@@ -88,32 +102,34 @@ func IMD1_MDToHTML(s string) string {
 // =====================================
 // Markdown to HTML (C-exported variants)
 
-//export C_IMD1_MDFileToHTMLFile
-func C_IMD1_MDFileToHTMLFile(c_md_filename *C.char, c_html_filename *C.char) {
-	md_filename := C.GoString(c_md_filename)
-	html_filename := C.GoString(c_html_filename)
-	IMD1_MDFileToHTMLFile(md_filename, html_filename)
-}
+// //export C_IMD1_MDFileToHTMLFile
+// func C_IMD1_MDFileToHTMLFile(c_md_filename *C.char, c_html_filename *C.char) unsafe.Pointer {
+// 	md_filename := C.GoString(c_md_filename)
+// 	html_filename := C.GoString(c_html_filename)
+// 	serial_metadata := IMD1_MDFileToHTMLFile(md_filename, html_filename)
+// 	return C.CBytes(serial_metadata)
+// }
 
-//export C_IMD1_MDToHTMLFile
-func C_IMD1_MDToHTMLFile(c_s *C.char, c_html_filename *C.char) {
-	s := C.GoString(c_s)
-	html_filename := C.GoString(c_html_filename)
-	IMD1_MDToHTMLFile(s, html_filename)
-}
+// //export C_IMD1_MDToHTMLFile
+// func C_IMD1_MDToHTMLFile(c_s *C.char, c_html_filename *C.char) unsafe.Pointer {
+// 	s := C.GoString(c_s)
+// 	html_filename := C.GoString(c_html_filename)
+// 	serial_metadata := IMD1_MDToHTMLFile(s, html_filename)
+// 	return C.CBytes(serial_metadata)
+// }
 
-//export C_IMD1_MDFileToHTML
-func C_IMD1_MDFileToHTML(c_md_filename *C.char) *C.char {
-	md_filename := C.GoString(c_md_filename)
-	html := IMD1_MDFileToHTML(md_filename)
-	return C.CString(html)
-}
+// //export C_IMD1_MDFileToHTML
+// func C_IMD1_MDFileToHTML(c_md_filename *C.char) (*C.char, unsafe.Pointer) {
+// 	md_filename := C.GoString(c_md_filename)
+// 	html, serial_metadata := IMD1_MDFileToHTML(md_filename)
+// 	return C.CString(html), C.CBytes(serial_metadata)
+// }
 
 //export C_IMD1_MDToHTML
-func C_IMD1_MDToHTML(c_s *C.char) *C.char {
+func C_IMD1_MDToHTML(c_s *C.char) (*C.char, unsafe.Pointer) {
 	s := C.GoString(c_s)
-	html := IMD1_MDToHTML(s)
-	return C.CString(html)
+	html, serial_metadata := IMD1_MDToHTML(s)
+	return C.CString(html), C.CBytes(serial_metadata)
 }
 
 // =====================================

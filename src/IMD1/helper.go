@@ -18,6 +18,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"regexp"
 	"strings"
 
@@ -184,6 +185,24 @@ func StringToLaTeXSafe(s string) string {
 		default:
 			sb.WriteRune(c)
 		}
+	}
+	return sb.String()
+}
+
+// - - - - -
+
+func StringSerialize(s string) []byte {
+	r := make([]byte, len(s) + 4)
+	binary.LittleEndian.PutUint32(r, uint32(len(s)))
+	copy(r[4:], []byte(s))
+	return r
+}
+
+func StringDeserialize(b []byte) string {
+	var sb strings.Builder
+	l := binary.LittleEndian.Uint32(b)
+	for i := uint32(0); i < l; i++ {
+		sb.WriteByte(b[i+4])
 	}
 	return sb.String()
 }
