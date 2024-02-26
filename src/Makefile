@@ -16,4 +16,4 @@
 .PHONY: build run
 
 build:
-	@(cd ./IMD1 && go build -o ../libimd1.so -buildmode=c-shared *.go)
+	@(cd ./main && go build -o ../libimd1.so -buildmode=c-shared *.go)

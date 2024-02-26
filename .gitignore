@@ -7,6 +7,11 @@ src/IMD1/output.html
 src/IMD1/test.md
 src/IMD1/test.html
 
+src/main/input.md
+src/main/output.html
+src/main/test.md
+src/main/test.html
+
 src/py_imd1/__pycache__
 src/py_imd1/imd12.py
 

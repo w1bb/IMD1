@@ -19,12 +19,13 @@ package main
 
 import (
 	log "github.com/sirupsen/logrus"
+	"github.com/w1bb/IMD1/src/IMD1"
 )
 
 // =====================================
 // Main itself, for sunny days
 
 func main() {
-	SetupLog(log.DebugLevel /*log.InfoLevel*/)
-	IMD1_MDFileToHTMLFile("test.md", "test.html")
+	IMD1.SetupLog(log.DebugLevel /*log.InfoLevel*/)
+	IMD1.IMD1_MDFileToHTMLFile("test.md", "test.html")
 }
