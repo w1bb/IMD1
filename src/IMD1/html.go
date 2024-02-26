@@ -19,6 +19,7 @@ package IMD1
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -38,11 +39,29 @@ type HTMLInterface interface {
 // Document HTML interface
 
 func (b *BlockDocument) GenerateHTMLTagPrefix() string {
-	return "<!DOCTYPE html>\n<html>\n<head><title></title></head>\n<body>\n"
+	switch b.TypeOfBlock {
+	case BlockDocumentType_CompleteSpecification:
+		return "<!DOCTYPE html>\n<html>\n<head><title></title></head>\n<body>\n"
+	case BlockDocumentType_HTML:
+		return "<html>\n<head><title></title></head>\n<body>\n"
+	case BlockDocumentType_Body:
+		return "<body>\n"
+	case BlockDocumentType_Direct:
+		return ""
+	}
+	panic(nil) // This should never be reached
 }
 
 func (b *BlockDocument) GenerateHTMLTagSuffix() string {
-	return "</body>\n</html>\n"
+	switch b.TypeOfBlock {
+	case BlockDocumentType_CompleteSpecification, BlockDocumentType_HTML:
+		return "</body>\n</html>\n"
+	case BlockDocumentType_Body:
+		return "</body>\n"
+	case BlockDocumentType_Direct:
+		return ""
+	}
+	panic(nil) // This should never be reached
 }
 
 // =====================================
@@ -589,13 +608,16 @@ func (b *BlockMetaBibinfo) GenerateHTMLTagSuffix() string {
 // =====================================
 // Generate HTML
 
-func GenerateHTML(tree *Tree[BlockInterface]) string {
+func GenerateHTML(tree *Tree[BlockInterface], output_type BlockDocumentType) string {
 	if tree == nil {
-		return "" // Just to be sure
+		panic(nil)
 	}
 	var s strings.Builder
 	var GenerateHTMLHelper func(tree *Tree[BlockInterface], sb *strings.Builder)
 	GenerateHTMLHelper = func(tree *Tree[BlockInterface], sb *strings.Builder) {
+		if reflect.TypeOf(tree.Value) == reflect.TypeOf(&BlockDocument{}) {
+			tree.Value.(*BlockDocument).TypeOfBlock = output_type
+		}
 		sb.WriteString(tree.Value.GenerateHTMLTagPrefix())
 		for i := 0; i < len(tree.Children); i++ {
 			GenerateHTMLHelper(tree.Children[i], sb)

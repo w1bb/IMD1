@@ -38,6 +38,13 @@ func C_FreeUnsafePointer(p unsafe.Pointer) {
 // =====================================
 // Markdown to HTML (Go)
 
+func ParseString(s string) (Tree[BlockInterface], MDMetaStructure) {
+	var file FileStruct
+	file.ReadString(s)
+	tree, metadata := file.MDParse()
+	return tree, metadata
+}
+
 func IMD1_MDToHTMLHelper(file FileStruct) (string, []byte) {
 	start_time := time.Now()
 	tree, metadata := file.MDParse()
@@ -47,7 +54,7 @@ func IMD1_MDToHTMLHelper(file FileStruct) (string, []byte) {
 	log.Debug(metadata)
 
 	start_time = time.Now()
-	html := GenerateHTML(&tree)
+	html := GenerateHTML(&tree, BlockDocumentType_CompleteSpecification)
 	end_time = time.Now()
 	log.Infof("Generating the HTML took %v", end_time.Sub(start_time))
 	return html, metadata.Serialize()

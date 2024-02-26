@@ -74,12 +74,40 @@ type BlockInterface interface {
 // =====================================
 // Document
 
+type BlockDocumentType uint8
+
+const (
+	BlockDocumentType_CompleteSpecification BlockDocumentType = iota
+	BlockDocumentType_HTML
+	BlockDocumentType_Body
+	BlockDocumentType_Direct
+)
+
+func (t BlockDocumentType) String() string {
+	switch t {
+	case BlockDocumentType_CompleteSpecification:
+		return "CompleteSpecification"
+	case BlockDocumentType_HTML:
+		return "HTML"
+	case BlockDocumentType_Body:
+		return "Body"
+	case BlockDocumentType_Direct:
+		return "Direct"
+	default:
+		panic(nil) // This should never be reached
+	}
+}
+
 type BlockDocument struct {
 	BlockStruct
+	TypeOfBlock BlockDocumentType
 }
 
 func (b BlockDocument) String() string {
-	return "BlockDocument" // irrelevant
+	return fmt.Sprintf(
+		"BlockDocument (type=%v)",
+		b.TypeOfBlock,
+	)
 }
 
 func (b *BlockDocument) CheckBlockStarts(line LineStruct) bool {
@@ -2105,7 +2133,7 @@ func (b *BlockSubfigure) GetRawContent() *string {
 
 type BlockTabs struct {
 	BlockStruct
-	Tabs   []*BlockTabsTab
+	Tabs          []*BlockTabsTab
 	SelectedIndex int
 }
 
@@ -2201,7 +2229,7 @@ func (b *BlockTabs) GetRawContent() *string {
 
 type BlockTabsTab struct {
 	BlockStruct
-	Name string
+	Name       string
 	IsSelected bool
 }
 
