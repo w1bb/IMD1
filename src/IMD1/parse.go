@@ -674,7 +674,7 @@ func GenerateBibliography(mp map[string]BibliographyEntry) string {
 			if value.Fields.Year != nil {
 				sb.WriteString(", <span class=\"year\">")
 				sb.WriteString(*value.Fields.Year)
-				sb.WriteString("</year>")
+				sb.WriteString("</span>")
 			}
 			// URL
 			if value.Fields.URL != nil {
