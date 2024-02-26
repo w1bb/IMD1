@@ -89,7 +89,11 @@ func (b *BlockHeading) GetHTMLHeadingLevel() int {
 }
 
 func (b *BlockHeading) GenerateHTMLTagPrefix() string {
-	return fmt.Sprintf("<h%v>", b.GetHTMLHeadingLevel())
+	if b.Anchor != "" {
+		return fmt.Sprintf("<h%v id=\"%v\">", b.GetHTMLHeadingLevel(), b.Anchor)
+	} else {
+		return fmt.Sprintf("<h%v>", b.GetHTMLHeadingLevel())
+	}
 }
 
 func (b *BlockHeading) GenerateHTMLTagSuffix() string {
