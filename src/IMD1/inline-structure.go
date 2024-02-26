@@ -50,6 +50,7 @@ func (b *InlineDocument) GetRawContent() *string {
 
 type InlineRawString struct {
 	Content string
+	IsEscaped bool
 }
 
 func (b InlineRawString) String() string {

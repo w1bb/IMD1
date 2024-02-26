@@ -501,7 +501,11 @@ func (b *InlineDocument) GenerateHTMLTagSuffix() string {
 // Raw string HTML interface
 
 func (b *InlineRawString) GenerateHTMLTagPrefix() string {
-	return StringToHTMLSafe(b.Content)
+	if b.IsEscaped {
+		return b.Content
+	} else {
+		return StringToHTMLSafe(b.Content)
+	}
 }
 
 func (b *InlineRawString) GenerateHTMLTagSuffix() string {
