@@ -15,10 +15,45 @@
   along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdlib.h>
 #include <stdio.h>
+
 #include "libimd1.h"
 
 int main() {
-    C_IMD1_MDFileToHTMLFile("input.md", "output.html");
+    // Read the contents of input.md
+    FILE *fin = fopen("input.md", "r+");
+    if (!fin) {
+        fprintf(stderr, "Could not open input.md");
+        return -1;
+    }
+    fseek(fin, 0, SEEK_END);
+    long size = ftell(fin);
+    fseek(fin, 0, SEEK_SET);
+    char *buffer = malloc(sizeof(char) * (size + 1));
+    if (!buffer) {
+        fprintf(stderr, "Could not allocate memory for buffer");
+        return -1;
+    }
+    fread(buffer, sizeof(char), size, fin);
+    buffer[size] = '\0';
+    fclose(fin);
+
+    // IMPORTANT: Call IMD1
+    struct C_IMD1_MDToHTML_return r = C_IMD1_MDToHTML(buffer);
+
+    // Output the HTML file
+    FILE *fout = fopen("output.html", "w+");
+    if (!fout) {
+        fprintf(stderr, "Could not open output.html");
+        return -1;
+    }
+    fprintf(fout, r.r0);
+    fclose(fout);
+
+    // IMPORTANT: Free the values returned by IMD1
+    free(r.r0);
+    free(r.r1);
+
     return 0;
 }
