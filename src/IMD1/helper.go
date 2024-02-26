@@ -189,6 +189,21 @@ func StringToLaTeXSafe(s string) string {
 	return sb.String()
 }
 
+func StringToKaTeXSafe(s string) string {
+	var sb strings.Builder
+	for _, c := range s {
+		switch c {
+		case '<':
+			sb.WriteString("\\lt ")
+		case '>':
+			sb.WriteString("\\gt ")
+		default:
+			sb.WriteRune(c)
+		}
+	}
+	return sb.String()
+}
+
 // - - - - -
 
 func StringSerialize(s string) []byte {

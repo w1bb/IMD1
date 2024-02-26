@@ -233,7 +233,7 @@ func (b *BlockMath) GenerateHTMLTagPrefix() string {
 	default:
 		panic(nil) // This should never be reached
 	}
-	return s + b.RawContent
+	return s + StringToKaTeXSafe(b.RawContent)
 }
 
 func (b *BlockMath) GenerateHTMLTagSuffix() string {
@@ -260,7 +260,7 @@ func (b *BlockInlineMath) GenerateHTMLTagPrefix() string {
 	default:
 		panic(nil) // This should never be reached
 	}
-	return s + b.RawContent
+	return s + StringToKaTeXSafe(b.RawContent)
 }
 
 func (b *BlockInlineMath) GenerateHTMLTagSuffix() string {
