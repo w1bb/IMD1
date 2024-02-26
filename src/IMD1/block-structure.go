@@ -2293,6 +2293,7 @@ func (b BlockTabsTab) GetBlocksAllowedInside() []BlockInterface {
 		&BlockHTML{},
 		&BlockLaTeX{},
 		&BlockTabs{},
+		&BlockTextbox{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
