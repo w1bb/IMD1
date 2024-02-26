@@ -462,7 +462,7 @@ func (b *BlockRef) GenerateHTMLTagPrefix() string {
 }
 
 func (b *BlockRef) GenerateHTMLTagSuffix() string {
-	return "</a>\n"
+	return "</a>"
 }
 
 // =====================================

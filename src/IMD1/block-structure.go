@@ -2853,6 +2853,7 @@ type BlockMetaBibinfo struct {
 	BlockStruct
 	RawContent string
 	JSONInline bool
+	RefFile    string
 }
 
 func (b BlockMetaBibinfo) String() string {
@@ -2877,9 +2878,12 @@ func (b *BlockMetaBibinfo) ExecuteAfterBlockStarts(line *LineStruct) {
 		i: line.LineIndex,
 		j: line.RuneJ - 9,
 	}
-	options := GatherBlockOptions(line, []string{"inline"})
+	options := GatherBlockOptions(line, []string{"inline", "ref-file"})
 	if value, ok := options["inline"]; ok {
 		b.JSONInline = Contains([]string{"allow", "allowed", "1", "true", "ok", "yes"}, value)
+	}
+	if value, ok := options["ref-file"]; ok {
+		b.RefFile = value
 	}
 	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,

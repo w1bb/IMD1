@@ -351,6 +351,7 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 					Type:           new_bibinfo_value.Type,
 					Fields:         new_bibinfo_value.Fields,
 					ReferenceIndex: CompleteBibinfoNextRefIndex,
+					File:           tree.Value.(*BlockMetaBibinfo).RefFile,
 				}
 				CompleteBibinfoNextRefIndex++
 			}
@@ -386,6 +387,9 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 			continue
 		}
 		RefBlocks[i].ReferenceIndex = entry.ReferenceIndex
+		if RefBlocks[i].File == "" {
+			RefBlocks[i].File = entry.File
+		}
 	}
 
 	// Generate bibliographies
@@ -485,6 +489,7 @@ type BibliographyEntry struct {
 	Type           BibliographyEntryType
 	Fields         BibliographyEntryFields
 	ReferenceIndex int
+	File           string
 }
 
 func (e BibliographyEntry) String() string {
