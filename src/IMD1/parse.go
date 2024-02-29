@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -341,7 +342,13 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 				panic(nil)
 			}
 			new_bibinfo := ParseBibinfo(tree.Value.(*BlockMetaBibinfo))
-			for new_bibinfo_key, new_bibinfo_value := range new_bibinfo {
+			ordered_new_bibinfo := make([]string, 0)
+			for k := range new_bibinfo {
+				ordered_new_bibinfo = append(ordered_new_bibinfo, k)
+			}
+			sort.Strings(ordered_new_bibinfo)
+			for _, new_bibinfo_key := range ordered_new_bibinfo {
+				new_bibinfo_value := new_bibinfo[new_bibinfo_key]
 				if old_value, ok := (CompleteBibinfo[new_bibinfo_key]); ok {
 					log.Warnf("A bibliography entry for tag \"%v\" already exists (%v). Keeping the old value...", new_bibinfo_key, old_value)
 					continue
@@ -641,7 +648,13 @@ func ParseBibinfo(b *BlockMetaBibinfo) map[string]BibliographyEntry {
 func GenerateBibliography(mp map[string]BibliographyEntry) string {
 	var sb strings.Builder
 	sb.WriteString("<div class=\"bibliography\">\n")
-	for key, value := range mp {
+	ordered_bibinfo := make([]string, 0)
+	for k := range mp {
+		ordered_bibinfo = append(ordered_bibinfo, k)
+	}
+	sort.Strings(ordered_bibinfo)
+	for _, key := range ordered_bibinfo {
+		value := mp[key]
 		sb.WriteString("<div class=\"bib-entry\" id=\"ref-")
 		sb.WriteString(strconv.Itoa(value.ReferenceIndex))
 		sb.WriteString("\">")
