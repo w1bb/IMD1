@@ -28,21 +28,12 @@ class IMD1:
         lib_path = os.path.join(current_folder_path, "libimd1.so")
         self.__imd1_lib_so = ctypes.cdll.LoadLibrary(lib_path)
 
-        self.__imd1_lib_so.C_FreeUnsafePointer.argtypes = [ctypes.c_void_p]
-        # self.__imd1_lib_so.C_IMD1_MDFileToHTMLFile.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
-        # self.__imd1_lib_so.C_IMD1_MDFileToHTMLFile.restype = ctypes.c_void_p
-        # self.__imd1_lib_so.C_IMD1_MDToHTMLFile.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
-        # self.__imd1_lib_so.C_IMD1_MDToHTMLFile.restype = ctypes.c_void_p
-        # class __C_IMD1_MDFileToHTML_return(ctypes.Structure):
-        #     _fields_ = [('r0', ctypes.c_char_p),
-        #                 ('r1', ctypes.c_void_p)]
-        # self.__imd1_lib_so.C_IMD1_MDFileToHTML.argtypes = [ctypes.c_char_p]
-        # self.__imd1_lib_so.C_IMD1_MDFileToHTML.restype = __C_IMD1_MDFileToHTML_return
-        class __C_IMD1_MDToHTML_return(ctypes.Structure):
+        self.__imd1_lib_so.CFree.argtypes = [ctypes.c_void_p]
+        class __CToHTML_return(ctypes.Structure):
             _fields_ = [('r0', ctypes.c_char_p),
                         ('r1', ctypes.c_void_p)]
-        self.__imd1_lib_so.C_IMD1_MDToHTML.argtypes = [ctypes.c_char_p]
-        self.__imd1_lib_so.C_IMD1_MDToHTML.restype = __C_IMD1_MDToHTML_return
+        self.__imd1_lib_so.CToHTML.argtypes = [ctypes.c_char_p]
+        self.__imd1_lib_so.CToHTML.restype = __CToHTML_return
 
     def __fill_meta(self, buffer):
         b = ctypes.cast(buffer, ctypes.c_void_p).value
@@ -55,12 +46,12 @@ class IMD1:
         if copyright_len > 0:
             self.meta["copyright"] = ctypes.string_at(b+4, copyright_len).decode('utf-8')
     
-    def md_to_html(self, md_string):
+    def to_html(self, md_string):
         c_s = md_string.encode('utf-8')
-        c_ret = self.__imd1_lib_so.C_IMD1_MDToHTML(c_s)
+        c_ret = self.__imd1_lib_so.CToHTML(c_s)
         self.html = ctypes.string_at(c_ret.r0).decode('utf-8')
         self.__fill_meta(c_ret.r1)
-        self.__imd1_lib_so.C_FreeUnsafePointer(c_ret.r1)
+        self.__imd1_lib_so.CFree(c_ret.r1)
     
     def reset(self):
         self.html = None

@@ -37,7 +37,7 @@ type InlineInterface interface {
 type InlineDocument struct {
 }
 
-func (b InlineDocument) String() string {
+func (b *InlineDocument) String() string {
 	return "InlineDocument"
 }
 
@@ -49,11 +49,11 @@ func (b *InlineDocument) GetRawContent() *string {
 // Raw string
 
 type InlineRawString struct {
-	Content string
+	Content   string
 	IsEscaped bool
 }
 
-func (b InlineRawString) String() string {
+func (b *InlineRawString) String() string {
 	return "InlineRawString (\"" + b.Content + "\")"
 }
 
@@ -67,18 +67,18 @@ func (b *InlineRawString) GetRawContent() *string {
 type InlineStringModifierType uint8
 
 const (
-	ItalicText InlineStringModifierType = iota
-	BoldText
-	StrikeoutText
+	InlineStringModifierTypeItalicText InlineStringModifierType = iota
+	InlineStringModifierTypeBoldText
+	InlineStringModifierTypeStrikeoutText
 )
 
 func (t InlineStringModifierType) String() string {
 	switch t {
-	case ItalicText:
+	case InlineStringModifierTypeItalicText:
 		return "ItalicText"
-	case BoldText:
+	case InlineStringModifierTypeBoldText:
 		return "BoldText"
-	case StrikeoutText:
+	case InlineStringModifierTypeStrikeoutText:
 		return "StrikeoutText"
 	default:
 		panic(nil)
@@ -89,7 +89,7 @@ type InlineStringModifier struct {
 	TypeOfModifier InlineStringModifierType
 }
 
-func (b InlineStringModifier) String() string {
+func (b *InlineStringModifier) String() string {
 	return "InlineStringModifier (" + b.TypeOfModifier.String() + ")"
 }
 
@@ -103,31 +103,31 @@ func (b *InlineStringModifier) GetRawContent() *string {
 type InlineDelimiterType uint8
 
 const (
-	AsteriskDelimiter InlineDelimiterType = iota
-	UnderlineDelimiter
-	TildeDelimiter
-	OpenBracketDelimiter
-	CloseBracketDelimiter
-	OpenParantDelimiter
-	CloseParantDelimiter
+	InlineDelimiterTypeAsteriskDelimiter InlineDelimiterType = iota
+	InlineDelimiterTypeUnderlineDelimiter
+	InlineDelimiterTypeTildeDelimiter
+	InlineDelimiterTypeOpenBracketDelimiter
+	InlineDelimiterTypeCloseBracketDelimiter
+	InlineDelimiterTypeOpenParenthesesDelimiter
+	InlineDelimiterTypeCloseParenthesesDelimiter
 )
 
 func (t InlineDelimiterType) String() string {
 	switch t {
-	case AsteriskDelimiter:
+	case InlineDelimiterTypeAsteriskDelimiter:
 		return "AsteriskDelimiter"
-	case UnderlineDelimiter:
+	case InlineDelimiterTypeUnderlineDelimiter:
 		return "UnderlineDelimiter"
-	case TildeDelimiter:
+	case InlineDelimiterTypeTildeDelimiter:
 		return "TildeDelimiter"
-	case OpenBracketDelimiter:
+	case InlineDelimiterTypeOpenBracketDelimiter:
 		return "OpenBracketDelimiter"
-	case CloseBracketDelimiter:
+	case InlineDelimiterTypeCloseBracketDelimiter:
 		return "CloseBracketDelimiter"
-	case OpenParantDelimiter:
-		return "OpenParantDelimiter"
-	case CloseParantDelimiter:
-		return "CloseParantDelimiter"
+	case InlineDelimiterTypeOpenParenthesesDelimiter:
+		return "OpenParenthesesDelimiter"
+	case InlineDelimiterTypeCloseParenthesesDelimiter:
+		return "CloseParenthesesDelimiter"
 	}
 	panic(nil) // This should never be reached
 }
@@ -149,7 +149,7 @@ type InlineStringDelimiter struct {
 	TypeOfDelimiter InlineDelimiterType
 }
 
-func (b InlineStringDelimiter) String() string {
+func (b *InlineStringDelimiter) String() string {
 	return "InlineStringDelimiter (" + b.TypeOfDelimiter.String() + ")"
 }
 
@@ -164,7 +164,7 @@ type InlineHref struct {
 	Address string
 }
 
-func (b InlineHref) String() string {
+func (b *InlineHref) String() string {
 	return "InlineHref (href=\"" + b.Address + "\")"
 }
 

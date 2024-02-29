@@ -39,8 +39,6 @@ func SetupLog(lvl log.Level) {
 // =====================================
 // String manipulation
 
-const INF_BLANKS int = 16
-
 func RemoveExcessSpaces(s string) string {
 	re := regexp.MustCompile(`\s+`)
 	return strings.TrimSpace(re.ReplaceAllString(s, " "))
@@ -52,16 +50,16 @@ func CheckRunesEndWithUnescapedASCII(r []rune, ending string) bool {
 	if len(r) < len(ending) {
 		return false
 	}
-	for ei, ri := (len(ending) - 1), (len(r) - 1); ei >= 0; ei, ri = ei-1, ri-1 {
+	for ei, ri := len(ending)-1, len(r)-1; ei >= 0; ei, ri = ei-1, ri-1 {
 		if r[ri] != rune(ending[ei]) {
 			return false
 		}
 	}
-	not_escaped := true
+	notEscaped := true
 	for i := len(r) - len(ending) - 1; i >= 0 && r[i] == '\\'; i-- {
-		not_escaped = !not_escaped
+		notEscaped = !notEscaped
 	}
-	return not_escaped
+	return notEscaped
 }
 
 // - - - - -
@@ -120,26 +118,26 @@ func GatherBlockOptions(line *LineStruct, pool []string) map[string]string {
 	result := make(map[string]string)
 	for left < len(line.RuneContent) && line.RuneContent[left] == '[' {
 		right := left + 1
-		equal_position := left - 1
+		equalPosition := left - 1
 		for right < len(line.RuneContent) && line.RuneContent[right] != ']' {
 			if line.RuneContent[right] == '\\' {
 				right++
-			} else if line.RuneContent[right] == '=' && equal_position == left-1 {
-				equal_position = right
+			} else if line.RuneContent[right] == '=' && equalPosition == left-1 {
+				equalPosition = right
 			}
 			right++
 		}
 		if right >= len(line.RuneContent) {
 			break
 		}
-		if equal_position == left-1 {
+		if equalPosition == left-1 {
 			log.Warnf(
 				"Non-option %v detected while searching for options. If you intended to write an option, don't forget the equal sign. If this is not an option, consider writing this on a separate line from the IMD1 tag. The search for other options has halted.",
 				string(line.RuneContent[left:right+1]),
 			)
 			break
 		}
-		option := string(line.RuneContent[left+1 : equal_position])
+		option := string(line.RuneContent[left+1 : equalPosition])
 		if !Contains(pool, option) {
 			log.Warnf(
 				"Option %v (=> \"%v\") will be ignored (it is not part of the IMD1 specification)",
@@ -147,7 +145,7 @@ func GatherBlockOptions(line *LineStruct, pool []string) map[string]string {
 				option,
 			)
 		} else {
-			result[option] = string(line.RuneContent[equal_position+1 : right])
+			result[option] = string(line.RuneContent[equalPosition+1 : right])
 		}
 		left = right + 1
 	}
@@ -207,9 +205,9 @@ func StringToKaTeXSafe(s string) string {
 // - - - - -
 
 func StringSerialize(s string) []byte {
-	r := make([]byte, len(s) + 4)
+	r := make([]byte, len(s)+4)
 	binary.LittleEndian.PutUint32(r, uint32(len(s)))
-	copy(r[4:], []byte(s))
+	copy(r[4:], s)
 	return r
 }
 

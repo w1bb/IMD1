@@ -40,13 +40,13 @@ type HTMLInterface interface {
 
 func (b *BlockDocument) GenerateHTMLTagPrefix() string {
 	switch b.TypeOfBlock {
-	case BlockDocumentType_CompleteSpecification:
+	case BlockDocumentTypeCompleteSpecification:
 		return "<!DOCTYPE html>\n<html>\n<head><title></title></head>\n<body>\n"
-	case BlockDocumentType_HTML:
+	case BlockDocumentTypeHTML:
 		return "<html>\n<head><title></title></head>\n<body>\n"
-	case BlockDocumentType_Body:
+	case BlockDocumentTypeBody:
 		return "<body>\n"
-	case BlockDocumentType_Direct:
+	case BlockDocumentTypeDirect:
 		return ""
 	}
 	panic(nil) // This should never be reached
@@ -54,11 +54,11 @@ func (b *BlockDocument) GenerateHTMLTagPrefix() string {
 
 func (b *BlockDocument) GenerateHTMLTagSuffix() string {
 	switch b.TypeOfBlock {
-	case BlockDocumentType_CompleteSpecification, BlockDocumentType_HTML:
+	case BlockDocumentTypeCompleteSpecification, BlockDocumentTypeHTML:
 		return "</body>\n</html>\n"
-	case BlockDocumentType_Body:
+	case BlockDocumentTypeBody:
 		return "</body>\n"
-	case BlockDocumentType_Direct:
+	case BlockDocumentTypeDirect:
 		return ""
 	}
 	panic(nil) // This should never be reached
@@ -101,9 +101,9 @@ func (b *BlockHeading) GenerateHTMLTagSuffix() string {
 }
 
 // =====================================
-// Textbox HTML interface
+// TextBox HTML interface
 
-func (b *BlockTextbox) GenerateHTMLTagPrefix() string {
+func (b *BlockTextBox) GenerateHTMLTagPrefix() string {
 	c := ""
 	if b.Class != "" {
 		c = " " + b.Class
@@ -114,29 +114,29 @@ func (b *BlockTextbox) GenerateHTMLTagPrefix() string {
 	)
 }
 
-func (b *BlockTextbox) GenerateHTMLTagSuffix() string {
+func (b *BlockTextBox) GenerateHTMLTagSuffix() string {
 	return "</div>\n"
 }
 
 // =====================================
-// Textbox title HTML interface
+// TextBox title HTML interface
 
-func (b *BlockTextboxTitle) GenerateHTMLTagPrefix() string {
+func (b *BlockTextBoxTitle) GenerateHTMLTagPrefix() string {
 	return "<div class=\"box-title\">"
 }
 
-func (b *BlockTextboxTitle) GenerateHTMLTagSuffix() string {
+func (b *BlockTextBoxTitle) GenerateHTMLTagSuffix() string {
 	return "</div>\n"
 }
 
 // =====================================
-// Textbox content HTML interface
+// TextBox content HTML interface
 
-func (b *BlockTextboxContent) GenerateHTMLTagPrefix() string {
+func (b *BlockTextBoxContent) GenerateHTMLTagPrefix() string {
 	return "<div class=\"box-content\">"
 }
 
-func (b *BlockTextboxContent) GenerateHTMLTagSuffix() string {
+func (b *BlockTextBoxContent) GenerateHTMLTagSuffix() string {
 	return "</div>\n"
 }
 
@@ -224,11 +224,11 @@ func (b *BlockInlineCodeListing) GenerateHTMLTagSuffix() string {
 func (b *BlockMath) GenerateHTMLTagPrefix() string {
 	var s string
 	switch b.TypeOfBlock {
-	case DoubleDollar, Brackets:
+	case BlockMathTypeDoubleDollar, BlockMathTypeBrackets:
 		s = "\\["
-	case BeginEquation:
-		s = "\\begin{eqaution}"
-	case BeginAlign:
+	case BlockMathTypeBeginEquation:
+		s = "\\begin{equation}"
+	case BlockMathTypeBeginAlign:
 		s = "\\begin{align}"
 	default:
 		panic(nil) // This should never be reached
@@ -238,11 +238,11 @@ func (b *BlockMath) GenerateHTMLTagPrefix() string {
 
 func (b *BlockMath) GenerateHTMLTagSuffix() string {
 	switch b.TypeOfBlock {
-	case DoubleDollar, Brackets:
+	case BlockMathTypeDoubleDollar, BlockMathTypeBrackets:
 		return "\\]\n"
-	case BeginEquation:
-		return "\\end{eqaution}\n"
-	case BeginAlign:
+	case BlockMathTypeBeginEquation:
+		return "\\end{equation}\n"
+	case BlockMathTypeBeginAlign:
 		return "\\end{align}\n"
 	default:
 		panic(nil) // This should never be reached
@@ -255,7 +255,7 @@ func (b *BlockMath) GenerateHTMLTagSuffix() string {
 func (b *BlockInlineMath) GenerateHTMLTagPrefix() string {
 	var s string
 	switch b.TypeOfBlock {
-	case SingleDollar, Parenthesis:
+	case BlockInlineMathTypeSingleDollar, BlockInlineMathTypeParenthesis:
 		s = "\\("
 	default:
 		panic(nil) // This should never be reached
@@ -265,7 +265,7 @@ func (b *BlockInlineMath) GenerateHTMLTagPrefix() string {
 
 func (b *BlockInlineMath) GenerateHTMLTagSuffix() string {
 	switch b.TypeOfBlock {
-	case SingleDollar, Parenthesis:
+	case BlockInlineMathTypeSingleDollar, BlockInlineMathTypeParenthesis:
 		return "\\)"
 	default:
 		panic(nil) // This should never be reached
@@ -299,15 +299,15 @@ func (b *BlockUlLi) GenerateHTMLTagSuffix() string {
 
 func (t BlockOlType) HTMLType() string {
 	switch t {
-	case OlType_1:
+	case BlockOlTypeNumber:
 		return "1"
-	case OlType_A:
+	case BlockOlTypeLetterCapital:
 		return "A"
-	case OlType_a:
+	case BlockOlTypeLetter:
 		return "a"
-	case OlType_I:
+	case BlockOlTypeRomanCapital:
 		return "I"
-	case OlType_i:
+	case BlockOlTypeRoman:
 		return "i"
 	default:
 		panic(nil) // This should never be reached
@@ -361,28 +361,28 @@ func (b *BlockFigure) GenerateHTMLTagSuffix() string {
 }
 
 // =====================================
-// Subfigure HTML interface
+// SubFigure HTML interface
 
-func (b *BlockSubfigure) GenerateHTMLTagPrefix() string {
-	img_tag := fmt.Sprintf(
+func (b *BlockSubFigure) GenerateHTMLTagPrefix() string {
+	imgTag := fmt.Sprintf(
 		"<img src=\"%v\"",
 		b.Source,
 	)
 	if b.Padding != "" {
-		img_tag += fmt.Sprintf(
+		imgTag += fmt.Sprintf(
 			" style=\"padding: %v;\">",
 			b.Padding,
 		)
 	} else {
-		img_tag += ">"
+		imgTag += ">"
 	}
 	return fmt.Sprintf(
 		"<div class=\"subfigure\">%v<div class=\"subcaption\">",
-		img_tag,
+		imgTag,
 	)
 }
 
-func (b *BlockSubfigure) GenerateHTMLTagSuffix() string {
+func (b *BlockSubFigure) GenerateHTMLTagSuffix() string {
 	return "</div></div>\n"
 }
 
@@ -521,11 +521,11 @@ func (b *InlineRawString) GenerateHTMLTagSuffix() string {
 
 func (b *InlineStringModifier) GenerateHTMLTagPrefix() string {
 	switch b.TypeOfModifier {
-	case ItalicText:
+	case InlineStringModifierTypeItalicText:
 		return "<em>"
-	case BoldText:
+	case InlineStringModifierTypeBoldText:
 		return "<strong>"
-	case StrikeoutText:
+	case InlineStringModifierTypeStrikeoutText:
 		return "<del>"
 	default:
 		panic(nil) // This should never be reached
@@ -534,11 +534,11 @@ func (b *InlineStringModifier) GenerateHTMLTagPrefix() string {
 
 func (b *InlineStringModifier) GenerateHTMLTagSuffix() string {
 	switch b.TypeOfModifier {
-	case ItalicText:
+	case InlineStringModifierTypeItalicText:
 		return "</em>"
-	case BoldText:
+	case InlineStringModifierTypeBoldText:
 		return "</strong>"
-	case StrikeoutText:
+	case InlineStringModifierTypeStrikeoutText:
 		return "</del>"
 	default:
 		panic(nil) // This should never be reached
@@ -605,18 +605,18 @@ func (b *BlockMetaCopyright) GenerateHTMLTagSuffix() string {
 // =====================================
 // Meta (bibliography) HTML interfaces (ignore them)
 
-func (b *BlockMetaBibinfo) GenerateHTMLTagPrefix() string {
+func (b *BlockMetaBibInfo) GenerateHTMLTagPrefix() string {
 	return ""
 }
 
-func (b *BlockMetaBibinfo) GenerateHTMLTagSuffix() string {
+func (b *BlockMetaBibInfo) GenerateHTMLTagSuffix() string {
 	return ""
 }
 
 // =====================================
 // Generate HTML
 
-func GenerateHTML(tree *Tree[BlockInterface], output_type BlockDocumentType) string {
+func GenerateHTML(tree *Tree[BlockInterface], outputType BlockDocumentType) string {
 	if tree == nil {
 		panic(nil)
 	}
@@ -624,7 +624,7 @@ func GenerateHTML(tree *Tree[BlockInterface], output_type BlockDocumentType) str
 	var GenerateHTMLHelper func(tree *Tree[BlockInterface], sb *strings.Builder)
 	GenerateHTMLHelper = func(tree *Tree[BlockInterface], sb *strings.Builder) {
 		if reflect.TypeOf(tree.Value) == reflect.TypeOf(&BlockDocument{}) {
-			tree.Value.(*BlockDocument).TypeOfBlock = output_type
+			tree.Value.(*BlockDocument).TypeOfBlock = outputType
 		}
 		sb.WriteString(tree.Value.GenerateHTMLTagPrefix())
 		for i := 0; i < len(tree.Children); i++ {

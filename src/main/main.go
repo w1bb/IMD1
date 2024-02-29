@@ -20,6 +20,7 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/w1bb/IMD1/src/IMD1"
+	"os"
 )
 
 // =====================================
@@ -27,5 +28,16 @@ import (
 
 func main() {
 	IMD1.SetupLog(log.DebugLevel /*log.InfoLevel*/)
-	IMD1.IMD1_MDFileToHTMLFile("test.md", "test.html")
+	imd1, err := os.ReadFile("test.md")
+	if err != nil {
+		panic(err)
+	}
+	html, _ := IMD1.ToHTML(string(imd1))
+
+	fout, err := os.Create("test.html")
+	if err != nil {
+		panic(err)
+	}
+	_, _ = fout.WriteString(html)
+	_ = fout.Close()
 }

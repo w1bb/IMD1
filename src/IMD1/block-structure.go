@@ -36,7 +36,13 @@ type BlockStruct struct {
 }
 
 func (b BlockStruct) String() string {
-	return fmt.Sprintf("{S=%v, E=%v, CS=%v, CE=%v}", b.Start, b.End, b.ContentStart, b.ContentEnd)
+	return fmt.Sprintf(
+		"{S=%v, E=%v, CS=%v, CE=%v}",
+		b.Start,
+		b.End,
+		b.ContentStart,
+		b.ContentEnd,
+	)
 }
 
 func (b BlockStruct) Empty() bool {
@@ -56,7 +62,7 @@ type BlockInterface interface {
 	SeekBufferAfterBlockStarts() int
 	ExecuteAfterBlockStarts(line *LineStruct)
 
-	CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int)
+	CheckBlockEndsNormally(line *LineStruct, parsingStack ParsingStack) (bool, BlockInterface, int)
 	CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool
 	ExecuteAfterBlockEnds(line *LineStruct)
 
@@ -77,21 +83,21 @@ type BlockInterface interface {
 type BlockDocumentType uint8
 
 const (
-	BlockDocumentType_CompleteSpecification BlockDocumentType = iota
-	BlockDocumentType_HTML
-	BlockDocumentType_Body
-	BlockDocumentType_Direct
+	BlockDocumentTypeCompleteSpecification BlockDocumentType = iota
+	BlockDocumentTypeHTML
+	BlockDocumentTypeBody
+	BlockDocumentTypeDirect
 )
 
 func (t BlockDocumentType) String() string {
 	switch t {
-	case BlockDocumentType_CompleteSpecification:
+	case BlockDocumentTypeCompleteSpecification:
 		return "CompleteSpecification"
-	case BlockDocumentType_HTML:
+	case BlockDocumentTypeHTML:
 		return "HTML"
-	case BlockDocumentType_Body:
+	case BlockDocumentTypeBody:
 		return "Body"
-	case BlockDocumentType_Direct:
+	case BlockDocumentTypeDirect:
 		return "Direct"
 	default:
 		panic(nil) // This should never be reached
@@ -103,42 +109,42 @@ type BlockDocument struct {
 	TypeOfBlock BlockDocumentType
 }
 
-func (b BlockDocument) String() string {
+func (b *BlockDocument) String() string {
 	return fmt.Sprintf(
 		"BlockDocument (type=%v)",
 		b.TypeOfBlock,
 	)
 }
 
-func (b *BlockDocument) CheckBlockStarts(line LineStruct) bool {
+func (b *BlockDocument) CheckBlockStarts(_ LineStruct) bool {
 	return false // irrelevant
 }
 
-func (b BlockDocument) SeekBufferAfterBlockStarts() int {
+func (b *BlockDocument) SeekBufferAfterBlockStarts() int {
 	return 0 // irrelevant
 }
 
-func (b *BlockDocument) ExecuteAfterBlockStarts(line *LineStruct) {
+func (b *BlockDocument) ExecuteAfterBlockStarts(_ *LineStruct) {
 	// irrelevant
 }
 
-func (b *BlockDocument) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockDocument) CheckBlockEndsNormally(_ *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return false, nil, 0 // irrelevant
 }
 
-func (b BlockDocument) SeekBufferAfterBlockEnds() int {
+func (b *BlockDocument) SeekBufferAfterBlockEnds() int {
 	return 0 // irrelevant
 }
 
-func (b BlockDocument) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockDocument) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false // irrelevant
 }
 
-func (b *BlockDocument) ExecuteAfterBlockEnds(line *LineStruct) {
+func (b *BlockDocument) ExecuteAfterBlockEnds(_ *LineStruct) {
 	// irrelevant
 }
 
-func (b BlockDocument) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockDocument) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
@@ -148,7 +154,7 @@ func (b BlockDocument) GetBlocksAllowedInside() []BlockInterface {
 		&BlockInlineCodeListing{},
 		&BlockMath{},
 		&BlockInlineMath{},
-		&BlockTextbox{},
+		&BlockTextBox{},
 		&BlockFigure{},
 		&BlockUl{},
 		&BlockOl{},
@@ -160,15 +166,15 @@ func (b BlockDocument) GetBlocksAllowedInside() []BlockInterface {
 	}
 }
 
-func (b BlockDocument) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockDocument) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockDocument) IsPartOfParagraph() bool {
+func (b *BlockDocument) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockDocument) DigDeeperForParagraphs() bool {
+func (b *BlockDocument) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -184,60 +190,60 @@ func (b *BlockDocument) GetRawContent() *string {
 // Paragraph
 
 // Please note that the paragraphs are inserted only once everything else has been
-// inserted (with the exception of InlineBlock)
+// inserted (except InlineBlock)
 
 type BlockParagraph struct {
 	BlockStruct
 }
 
-func (b BlockParagraph) String() string {
+func (b *BlockParagraph) String() string {
 	return fmt.Sprintf(
 		"BlockParagraph, %v",
 		b.BlockStruct.String(),
 	)
 }
 
-func (b *BlockParagraph) CheckBlockStarts(line LineStruct) bool {
+func (b *BlockParagraph) CheckBlockStarts(_ LineStruct) bool {
 	return false // irrelevant
 }
 
-func (b BlockParagraph) SeekBufferAfterBlockStarts() int {
+func (b *BlockParagraph) SeekBufferAfterBlockStarts() int {
 	return 0 // irrelevant
 }
 
-func (b *BlockParagraph) ExecuteAfterBlockStarts(line *LineStruct) {
+func (b *BlockParagraph) ExecuteAfterBlockStarts(_ *LineStruct) {
 	// irrelevant
 }
 
-func (b *BlockParagraph) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockParagraph) CheckBlockEndsNormally(_ *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return false, nil, 0 // irrelevant
 }
 
-func (b BlockParagraph) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockParagraph) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false // irrelevant
 }
 
-func (b *BlockParagraph) ExecuteAfterBlockEnds(line *LineStruct) {
+func (b *BlockParagraph) ExecuteAfterBlockEnds(_ *LineStruct) {
 	// irrelevant
 }
 
-func (b BlockParagraph) SeekBufferAfterBlockEnds() int {
+func (b *BlockParagraph) SeekBufferAfterBlockEnds() int {
 	return 0 // irrelevant
 }
 
-func (b BlockParagraph) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockParagraph) GetBlocksAllowedInside() []BlockInterface {
 	return nil // irrelevant
 }
 
-func (b BlockParagraph) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockParagraph) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockParagraph) IsPartOfParagraph() bool {
+func (b *BlockParagraph) IsPartOfParagraph() bool {
 	return false // irrelevant
 }
 
-func (b BlockParagraph) DigDeeperForParagraphs() bool {
+func (b *BlockParagraph) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -258,7 +264,7 @@ type BlockHeading struct {
 	Anchor       string
 }
 
-func (b BlockHeading) String() string {
+func (b *BlockHeading) String() string {
 	return fmt.Sprintf(
 		"BlockHeading (level=%v, anchor=%v), %v",
 		b.HeadingLevel,
@@ -277,7 +283,7 @@ func (b *BlockHeading) CheckBlockStarts(line LineStruct) bool {
 	return true
 }
 
-func (b BlockHeading) SeekBufferAfterBlockStarts() int {
+func (b *BlockHeading) SeekBufferAfterBlockStarts() int {
 	return b.HeadingLevel
 }
 
@@ -296,11 +302,11 @@ func (b *BlockHeading) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockHeading) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
-	return (line.LineIndex != b.Start.i), nil, 0
+func (b *BlockHeading) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
+	return line.LineIndex != b.Start.i, nil, 0
 }
 
-func (b BlockHeading) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockHeading) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -312,11 +318,11 @@ func (b *BlockHeading) ExecuteAfterBlockEnds(line *LineStruct) {
 	b.ContentEnd = b.End
 }
 
-func (b BlockHeading) SeekBufferAfterBlockEnds() int {
+func (b *BlockHeading) SeekBufferAfterBlockEnds() int {
 	return 0
 }
 
-func (b BlockHeading) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockHeading) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
@@ -328,15 +334,15 @@ func (b BlockHeading) GetBlocksAllowedInside() []BlockInterface {
 	}
 }
 
-func (b BlockHeading) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockHeading) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockHeading) IsPartOfParagraph() bool {
+func (b *BlockHeading) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockHeading) DigDeeperForParagraphs() bool {
+func (b *BlockHeading) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -349,33 +355,33 @@ func (b *BlockHeading) GetRawContent() *string {
 }
 
 // =====================================
-// Textbox
+// TextBox
 
-type BlockTextbox struct {
+type BlockTextBox struct {
 	BlockStruct
 	Class string
 }
 
-func (b BlockTextbox) String() string {
+func (b *BlockTextBox) String() string {
 	return fmt.Sprintf(
-		"BlockTextbox (class=%v), %v",
+		"BlockTextBox (class=%v), %v",
 		b.Class,
 		b.BlockStruct.String(),
 	)
 }
 
-func (b *BlockTextbox) CheckBlockStarts(line LineStruct) bool {
+func (b *BlockTextBox) CheckBlockStarts(line LineStruct) bool {
 	if !CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|") {
 		return false
 	}
 	return CheckRunesStartsWithASCII(line.RuneContent[line.RuneJ:], "|textbox>")
 }
 
-func (b BlockTextbox) SeekBufferAfterBlockStarts() int {
+func (b *BlockTextBox) SeekBufferAfterBlockStarts() int {
 	return 9
 }
 
-func (b *BlockTextbox) ExecuteAfterBlockStarts(line *LineStruct) {
+func (b *BlockTextBox) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 9,
@@ -390,15 +396,15 @@ func (b *BlockTextbox) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockTextbox) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockTextBox) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<textbox|"), nil, 0
 }
 
-func (b BlockTextbox) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockTextBox) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
-func (b *BlockTextbox) ExecuteAfterBlockEnds(line *LineStruct) {
+func (b *BlockTextBox) ExecuteAfterBlockEnds(line *LineStruct) {
 	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
@@ -409,61 +415,61 @@ func (b *BlockTextbox) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockTextbox) SeekBufferAfterBlockEnds() int {
+func (b *BlockTextBox) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockTextbox) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockTextBox) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
-		&BlockTextboxTitle{},
-		&BlockTextboxContent{},
+		&BlockTextBoxTitle{},
+		&BlockTextBoxContent{},
 	}
 }
 
-func (b BlockTextbox) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockTextBox) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockTextbox) IsPartOfParagraph() bool {
+func (b *BlockTextBox) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockTextbox) DigDeeperForParagraphs() bool {
+func (b *BlockTextBox) DigDeeperForParagraphs() bool {
 	return true
 }
 
-func (b *BlockTextbox) GetBlockStruct() *BlockStruct {
+func (b *BlockTextBox) GetBlockStruct() *BlockStruct {
 	return &b.BlockStruct
 }
 
-func (b *BlockTextbox) GetRawContent() *string {
+func (b *BlockTextBox) GetRawContent() *string {
 	return nil
 }
 
 // =====================================
-// Textbox title
+// TextBox title
 
-type BlockTextboxTitle struct {
+type BlockTextBoxTitle struct {
 	BlockStruct
 }
 
-func (b BlockTextboxTitle) String() string {
+func (b *BlockTextBoxTitle) String() string {
 	return fmt.Sprintf(
-		"BlockTextboxTitle, %v",
+		"BlockTextBoxTitle, %v",
 		b.BlockStruct.String(),
 	)
 }
 
-func (b *BlockTextboxTitle) CheckBlockStarts(line LineStruct) bool {
+func (b *BlockTextBoxTitle) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|title>")
 }
 
-func (b BlockTextboxTitle) SeekBufferAfterBlockStarts() int {
+func (b *BlockTextBoxTitle) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
-func (b *BlockTextboxTitle) ExecuteAfterBlockStarts(line *LineStruct) {
+func (b *BlockTextBoxTitle) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 7,
@@ -474,15 +480,15 @@ func (b *BlockTextboxTitle) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockTextboxTitle) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockTextBoxTitle) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<title|"), nil, 0
 }
 
-func (b BlockTextboxTitle) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockTextBoxTitle) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
-func (b *BlockTextboxTitle) ExecuteAfterBlockEnds(line *LineStruct) {
+func (b *BlockTextBoxTitle) ExecuteAfterBlockEnds(line *LineStruct) {
 	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
@@ -493,11 +499,11 @@ func (b *BlockTextboxTitle) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockTextboxTitle) SeekBufferAfterBlockEnds() int {
+func (b *BlockTextBoxTitle) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockTextboxTitle) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockTextBoxTitle) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
@@ -509,49 +515,49 @@ func (b BlockTextboxTitle) GetBlocksAllowedInside() []BlockInterface {
 	}
 }
 
-func (b BlockTextboxTitle) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockTextBoxTitle) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockTextboxTitle) IsPartOfParagraph() bool {
+func (b *BlockTextBoxTitle) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockTextboxTitle) DigDeeperForParagraphs() bool {
+func (b *BlockTextBoxTitle) DigDeeperForParagraphs() bool {
 	return true
 }
 
-func (b *BlockTextboxTitle) GetBlockStruct() *BlockStruct {
+func (b *BlockTextBoxTitle) GetBlockStruct() *BlockStruct {
 	return &b.BlockStruct
 }
 
-func (b *BlockTextboxTitle) GetRawContent() *string {
+func (b *BlockTextBoxTitle) GetRawContent() *string {
 	return nil
 }
 
 // =====================================
-// Textbox
+// TextBox content
 
-type BlockTextboxContent struct {
+type BlockTextBoxContent struct {
 	BlockStruct
 }
 
-func (b BlockTextboxContent) String() string {
+func (b *BlockTextBoxContent) String() string {
 	return fmt.Sprintf(
-		"BlockTextboxContent, %v",
+		"BlockTextBoxContent, %v",
 		b.BlockStruct.String(),
 	)
 }
 
-func (b *BlockTextboxContent) CheckBlockStarts(line LineStruct) bool {
+func (b *BlockTextBoxContent) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|content>")
 }
 
-func (b BlockTextboxContent) SeekBufferAfterBlockStarts() int {
+func (b *BlockTextBoxContent) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
-func (b *BlockTextboxContent) ExecuteAfterBlockStarts(line *LineStruct) {
+func (b *BlockTextBoxContent) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 9,
@@ -562,15 +568,15 @@ func (b *BlockTextboxContent) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockTextboxContent) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockTextBoxContent) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<content|"), nil, 0
 }
 
-func (b BlockTextboxContent) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockTextBoxContent) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
-func (b *BlockTextboxContent) ExecuteAfterBlockEnds(line *LineStruct) {
+func (b *BlockTextBoxContent) ExecuteAfterBlockEnds(line *LineStruct) {
 	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
@@ -581,11 +587,11 @@ func (b *BlockTextboxContent) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockTextboxContent) SeekBufferAfterBlockEnds() int {
+func (b *BlockTextBoxContent) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockTextboxContent) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockTextBoxContent) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
@@ -595,7 +601,7 @@ func (b BlockTextboxContent) GetBlocksAllowedInside() []BlockInterface {
 		&BlockInlineCodeListing{},
 		&BlockMath{},
 		&BlockInlineMath{},
-		&BlockTextbox{},
+		&BlockTextBox{},
 		&BlockFigure{},
 		&BlockUl{},
 		&BlockOl{},
@@ -604,23 +610,23 @@ func (b BlockTextboxContent) GetBlocksAllowedInside() []BlockInterface {
 	}
 }
 
-func (b BlockTextboxContent) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockTextBoxContent) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockTextboxContent) IsPartOfParagraph() bool {
+func (b *BlockTextBoxContent) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockTextboxContent) DigDeeperForParagraphs() bool {
+func (b *BlockTextBoxContent) DigDeeperForParagraphs() bool {
 	return true
 }
 
-func (b *BlockTextboxContent) GetBlockStruct() *BlockStruct {
+func (b *BlockTextBoxContent) GetBlockStruct() *BlockStruct {
 	return &b.BlockStruct
 }
 
-func (b *BlockTextboxContent) GetRawContent() *string {
+func (b *BlockTextBoxContent) GetRawContent() *string {
 	return nil
 }
 
@@ -632,7 +638,7 @@ type BlockToggle struct {
 	Class string
 }
 
-func (b BlockToggle) String() string {
+func (b *BlockToggle) String() string {
 	return fmt.Sprintf(
 		"BlockToggle (class=%v), %v",
 		b.Class,
@@ -644,7 +650,7 @@ func (b *BlockToggle) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|toggle>")
 }
 
-func (b BlockToggle) SeekBufferAfterBlockStarts() int {
+func (b *BlockToggle) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -663,11 +669,11 @@ func (b *BlockToggle) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockToggle) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockToggle) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<toggle|"), nil, 0
 }
 
-func (b BlockToggle) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockToggle) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -682,27 +688,27 @@ func (b *BlockToggle) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockToggle) SeekBufferAfterBlockEnds() int {
+func (b *BlockToggle) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockToggle) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockToggle) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
-		&BlockTextboxTitle{},
-		&BlockTextboxContent{},
+		&BlockTextBoxTitle{},
+		&BlockTextBoxContent{},
 	}
 }
 
-func (b BlockToggle) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockToggle) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockToggle) IsPartOfParagraph() bool {
+func (b *BlockToggle) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockToggle) DigDeeperForParagraphs() bool {
+func (b *BlockToggle) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -722,7 +728,7 @@ type BlockComment struct {
 	RawContent string
 }
 
-func (b BlockComment) String() string {
+func (b *BlockComment) String() string {
 	return fmt.Sprintf(
 		"BlockComment, %v :: \"%v\"",
 		b.BlockStruct.String(),
@@ -734,7 +740,7 @@ func (b *BlockComment) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<!--")
 }
 
-func (b BlockComment) SeekBufferAfterBlockStarts() int {
+func (b *BlockComment) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -749,11 +755,11 @@ func (b *BlockComment) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockComment) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockComment) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "-->"), nil, 0
 }
 
-func (b BlockComment) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockComment) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -768,23 +774,23 @@ func (b *BlockComment) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockComment) SeekBufferAfterBlockEnds() int {
+func (b *BlockComment) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockComment) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockComment) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockComment) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockComment) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockComment) IsPartOfParagraph() bool {
+func (b *BlockComment) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockComment) DigDeeperForParagraphs() bool {
+func (b *BlockComment) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -804,7 +810,7 @@ type BlockHTML struct {
 	RawContent string
 }
 
-func (b BlockHTML) String() string {
+func (b *BlockHTML) String() string {
 	return fmt.Sprintf(
 		"BlockHTML, %v :: \"%v\"",
 		b.BlockStruct.String(),
@@ -816,7 +822,7 @@ func (b *BlockHTML) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|html>")
 }
 
-func (b BlockHTML) SeekBufferAfterBlockStarts() int {
+func (b *BlockHTML) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -831,11 +837,11 @@ func (b *BlockHTML) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockHTML) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockHTML) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<html|"), nil, 0
 }
 
-func (b BlockHTML) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockHTML) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -850,23 +856,23 @@ func (b *BlockHTML) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockHTML) SeekBufferAfterBlockEnds() int {
+func (b *BlockHTML) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockHTML) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockHTML) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockHTML) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockHTML) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockHTML) IsPartOfParagraph() bool {
+func (b *BlockHTML) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockHTML) DigDeeperForParagraphs() bool {
+func (b *BlockHTML) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -886,7 +892,7 @@ type BlockLaTeX struct {
 	RawContent string
 }
 
-func (b BlockLaTeX) String() string {
+func (b *BlockLaTeX) String() string {
 	return fmt.Sprintf(
 		"BlockLaTeX, %v :: \"%v\"",
 		b.BlockStruct.String(),
@@ -898,7 +904,7 @@ func (b *BlockLaTeX) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|latex>")
 }
 
-func (b BlockLaTeX) SeekBufferAfterBlockStarts() int {
+func (b *BlockLaTeX) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -913,11 +919,11 @@ func (b *BlockLaTeX) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockLaTeX) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockLaTeX) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<latex|"), nil, 0
 }
 
-func (b BlockLaTeX) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockLaTeX) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -932,23 +938,23 @@ func (b *BlockLaTeX) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockLaTeX) SeekBufferAfterBlockEnds() int {
+func (b *BlockLaTeX) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockLaTeX) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockLaTeX) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockLaTeX) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockLaTeX) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockLaTeX) IsPartOfParagraph() bool {
+func (b *BlockLaTeX) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockLaTeX) DigDeeperForParagraphs() bool {
+func (b *BlockLaTeX) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -972,7 +978,7 @@ type BlockCodeListing struct {
 	RawContent string
 }
 
-func (b BlockCodeListing) String() string {
+func (b *BlockCodeListing) String() string {
 	return fmt.Sprintf(
 		"BlockCodeListing (lang=%v, file=%v, align=%v), %v :: \"%v\"",
 		b.Language,
@@ -988,12 +994,12 @@ func (b *BlockCodeListing) CheckBlockStarts(line LineStruct) bool {
 		if line.RuneJ+2 >= len(line.RuneContent) {
 			return false
 		}
-		return line.RuneContent[line.RuneJ+1] == rune('`') && line.RuneContent[line.RuneJ+2] == rune('`')
+		return line.RuneContent[line.RuneJ+1] == '`' && line.RuneContent[line.RuneJ+2] == '`'
 	}
 	return false
 }
 
-func (b BlockCodeListing) SeekBufferAfterBlockStarts() int {
+func (b *BlockCodeListing) SeekBufferAfterBlockStarts() int {
 	return 3
 }
 
@@ -1027,11 +1033,11 @@ func (b *BlockCodeListing) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockCodeListing) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockCodeListing) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "```"), nil, 0
 }
 
-func (b BlockCodeListing) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockCodeListing) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -1046,23 +1052,23 @@ func (b *BlockCodeListing) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockCodeListing) SeekBufferAfterBlockEnds() int {
+func (b *BlockCodeListing) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockCodeListing) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockCodeListing) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockCodeListing) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockCodeListing) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockCodeListing) IsPartOfParagraph() bool {
+func (b *BlockCodeListing) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockCodeListing) DigDeeperForParagraphs() bool {
+func (b *BlockCodeListing) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -1082,7 +1088,7 @@ type BlockInlineCodeListing struct {
 	RawContent string
 }
 
-func (b BlockInlineCodeListing) String() string {
+func (b *BlockInlineCodeListing) String() string {
 	return fmt.Sprintf(
 		"BlockInlineCodeListing, %v :: \"%v\"",
 		b.BlockStruct.String(),
@@ -1095,12 +1101,12 @@ func (b *BlockInlineCodeListing) CheckBlockStarts(line LineStruct) bool {
 		if line.RuneJ+2 >= len(line.RuneContent) {
 			return true
 		}
-		return line.RuneContent[line.RuneJ+1] != rune('`') || line.RuneContent[line.RuneJ+2] != rune('`')
+		return line.RuneContent[line.RuneJ+1] != '`' || line.RuneContent[line.RuneJ+2] != '`'
 	}
 	return false
 }
 
-func (b BlockInlineCodeListing) SeekBufferAfterBlockStarts() int {
+func (b *BlockInlineCodeListing) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -1115,11 +1121,11 @@ func (b *BlockInlineCodeListing) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockInlineCodeListing) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockInlineCodeListing) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "`"), nil, 0
 }
 
-func (b BlockInlineCodeListing) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockInlineCodeListing) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -1134,23 +1140,23 @@ func (b *BlockInlineCodeListing) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockInlineCodeListing) SeekBufferAfterBlockEnds() int {
+func (b *BlockInlineCodeListing) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockInlineCodeListing) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockInlineCodeListing) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockInlineCodeListing) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockInlineCodeListing) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockInlineCodeListing) IsPartOfParagraph() bool {
+func (b *BlockInlineCodeListing) IsPartOfParagraph() bool {
 	return true
 }
 
-func (b BlockInlineCodeListing) DigDeeperForParagraphs() bool {
+func (b *BlockInlineCodeListing) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -1168,21 +1174,21 @@ func (b *BlockInlineCodeListing) GetRawContent() *string {
 type BlockMathType uint8
 
 const (
-	DoubleDollar BlockMathType = iota
-	Brackets
-	BeginEquation
-	BeginAlign
+	BlockMathTypeDoubleDollar BlockMathType = iota
+	BlockMathTypeBrackets
+	BlockMathTypeBeginEquation
+	BlockMathTypeBeginAlign
 )
 
 func (t BlockMathType) String() string {
 	switch t {
-	case DoubleDollar:
+	case BlockMathTypeDoubleDollar:
 		return "DoubleDollar <=> $$...$$"
-	case Brackets:
+	case BlockMathTypeBrackets:
 		return "Brackets <=> \\[...\\]"
-	case BeginEquation:
+	case BlockMathTypeBeginEquation:
 		return "BeginEquation <=> \\begin{equation}...\\end{equation}"
-	case BeginAlign:
+	case BlockMathTypeBeginAlign:
 		return "BeginAlign <=> \\begin{align}...\\end{align}"
 	default:
 		panic(nil) // This should never be reached
@@ -1195,7 +1201,7 @@ type BlockMath struct {
 	RawContent  string
 }
 
-func (b BlockMath) String() string {
+func (b *BlockMath) String() string {
 	return fmt.Sprintf(
 		"BlockMath (type: %v), %v :: \"%v\"",
 		b.TypeOfBlock.String(),
@@ -1207,17 +1213,17 @@ func (b BlockMath) String() string {
 func (b *BlockMath) CheckBlockStarts(line LineStruct) bool {
 	s := line.RuneContent[:line.RuneJ+1]
 	if CheckRunesEndWithUnescapedASCII(s, "\\begin{equation}") {
-		b.TypeOfBlock = BeginEquation
+		b.TypeOfBlock = BlockMathTypeBeginEquation
 		return true
 	} else if CheckRunesEndWithUnescapedASCII(s, "\\begin{align}") {
-		b.TypeOfBlock = BeginAlign
+		b.TypeOfBlock = BlockMathTypeBeginAlign
 		return true
 	} else if CheckRunesEndWithUnescapedASCII(s, "\\[") {
-		b.TypeOfBlock = Brackets
+		b.TypeOfBlock = BlockMathTypeBrackets
 		return true
 	} else if CheckRunesEndWithUnescapedASCII(s, "$") {
 		if line.RuneJ+1 < len(line.RuneContent) && line.RuneContent[line.RuneJ+1] == '$' {
-			b.TypeOfBlock = DoubleDollar
+			b.TypeOfBlock = BlockMathTypeDoubleDollar
 			return true
 		} else {
 			return false
@@ -1226,11 +1232,11 @@ func (b *BlockMath) CheckBlockStarts(line LineStruct) bool {
 	return false
 }
 
-func (b BlockMath) SeekBufferAfterBlockStarts() int {
+func (b *BlockMath) SeekBufferAfterBlockStarts() int {
 	switch b.TypeOfBlock {
-	case BeginEquation, BeginAlign, Brackets:
+	case BlockMathTypeBeginEquation, BlockMathTypeBeginAlign, BlockMathTypeBrackets:
 		return 1
-	case DoubleDollar:
+	case BlockMathTypeDoubleDollar:
 		return 2
 	}
 	panic(nil)
@@ -1238,48 +1244,48 @@ func (b BlockMath) SeekBufferAfterBlockStarts() int {
 
 func (b *BlockMath) ExecuteAfterBlockStarts(line *LineStruct) {
 	switch b.TypeOfBlock {
-	case BeginEquation:
+	case BlockMathTypeBeginEquation:
 		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 16}
-	case BeginAlign:
+	case BlockMathTypeBeginAlign:
 		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 13}
-	case Brackets, DoubleDollar:
+	case BlockMathTypeBrackets, BlockMathTypeDoubleDollar:
 		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 2}
 	}
 	b.ContentStart = Pair[int, int]{line.LineIndex, line.RuneJ}
 }
 
-func (b *BlockMath) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockMath) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	s := line.RuneContent[:line.RuneJ+1]
 	switch b.TypeOfBlock {
-	case BeginEquation:
+	case BlockMathTypeBeginEquation:
 		return CheckRunesEndWithUnescapedASCII(s, "\\end{equation}"), nil, 0
-	case BeginAlign:
+	case BlockMathTypeBeginAlign:
 		return CheckRunesEndWithUnescapedASCII(s, "\\end{align}"), nil, 0
-	case Brackets:
+	case BlockMathTypeBrackets:
 		return CheckRunesEndWithUnescapedASCII(s, "\\]"), nil, 0
-	case DoubleDollar:
+	case BlockMathTypeDoubleDollar:
 		return CheckRunesEndWithUnescapedASCII(s, "$$"), nil, 0
 	}
 	panic(nil) // This should never be reached
 }
 
-func (b BlockMath) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockMath) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
 func (b *BlockMath) ExecuteAfterBlockEnds(line *LineStruct) {
 	switch b.TypeOfBlock {
-	case BeginEquation:
+	case BlockMathTypeBeginEquation:
 		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ - 14,
 		}
-	case BeginAlign:
+	case BlockMathTypeBeginAlign:
 		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ - 11,
 		}
-	case Brackets, DoubleDollar:
+	case BlockMathTypeBrackets, BlockMathTypeDoubleDollar:
 		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ - 2,
@@ -1291,23 +1297,23 @@ func (b *BlockMath) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockMath) SeekBufferAfterBlockEnds() int {
+func (b *BlockMath) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockMath) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockMath) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockMath) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockMath) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockMath) IsPartOfParagraph() bool {
+func (b *BlockMath) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockMath) DigDeeperForParagraphs() bool {
+func (b *BlockMath) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -1325,15 +1331,15 @@ func (b *BlockMath) GetRawContent() *string {
 type BlockInlineMathType uint8
 
 const (
-	SingleDollar BlockInlineMathType = iota
-	Parenthesis
+	BlockInlineMathTypeSingleDollar BlockInlineMathType = iota
+	BlockInlineMathTypeParenthesis
 )
 
 func (t BlockInlineMathType) String() string {
 	switch t {
-	case SingleDollar:
+	case BlockInlineMathTypeSingleDollar:
 		return "SingleDollar <=> $...$"
-	case Parenthesis:
+	case BlockInlineMathTypeParenthesis:
 		return "Parenthesis <=> \\(...\\)"
 	default:
 		panic(nil) // This should never be reached
@@ -1346,8 +1352,7 @@ type BlockInlineMath struct {
 	RawContent  string
 }
 
-func (b BlockInlineMath) String() string {
-
+func (b *BlockInlineMath) String() string {
 	return fmt.Sprintf(
 		"BlockInlineMath (type: %v), %v :: \"%v\"",
 		b.TypeOfBlock.String(),
@@ -1359,31 +1364,31 @@ func (b BlockInlineMath) String() string {
 func (b *BlockInlineMath) CheckBlockStarts(line LineStruct) bool {
 	s := line.RuneContent[:line.RuneJ+1]
 	if CheckRunesEndWithUnescapedASCII(s, "\\(") {
-		b.TypeOfBlock = Parenthesis
+		b.TypeOfBlock = BlockInlineMathTypeParenthesis
 		return true
 	} else if CheckRunesEndWithUnescapedASCII(s, "$") {
 		if line.RuneJ+1 < len(line.RuneContent) && line.RuneContent[line.RuneJ+1] == '$' {
 			return false
 		} else {
-			b.TypeOfBlock = SingleDollar
+			b.TypeOfBlock = BlockInlineMathTypeSingleDollar
 			return true
 		}
 	}
 	return false
 }
 
-func (b BlockInlineMath) SeekBufferAfterBlockStarts() int {
+func (b *BlockInlineMath) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
 func (b *BlockInlineMath) ExecuteAfterBlockStarts(line *LineStruct) {
 	switch b.TypeOfBlock {
-	case Parenthesis:
+	case BlockInlineMathTypeParenthesis:
 		b.Start = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ - 2,
 		}
-	case SingleDollar:
+	case BlockInlineMathTypeSingleDollar:
 		b.Start = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ - 1,
@@ -1395,29 +1400,29 @@ func (b *BlockInlineMath) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockInlineMath) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockInlineMath) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	s := line.RuneContent[:line.RuneJ+1]
 	switch b.TypeOfBlock {
-	case Parenthesis:
+	case BlockInlineMathTypeParenthesis:
 		return CheckRunesEndWithUnescapedASCII(s, "\\)"), nil, 0
-	case SingleDollar:
+	case BlockInlineMathTypeSingleDollar:
 		return CheckRunesEndWithUnescapedASCII(s, "$"), nil, 0
 	}
 	panic(nil) // This should never be reached
 }
 
-func (b BlockInlineMath) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockInlineMath) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
 func (b *BlockInlineMath) ExecuteAfterBlockEnds(line *LineStruct) {
 	switch b.TypeOfBlock {
-	case Parenthesis:
+	case BlockInlineMathTypeParenthesis:
 		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ - 2,
 		}
-	case SingleDollar:
+	case BlockInlineMathTypeSingleDollar:
 		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ - 1,
@@ -1429,23 +1434,23 @@ func (b *BlockInlineMath) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockInlineMath) SeekBufferAfterBlockEnds() int {
+func (b *BlockInlineMath) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockInlineMath) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockInlineMath) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockInlineMath) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockInlineMath) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockInlineMath) IsPartOfParagraph() bool {
+func (b *BlockInlineMath) IsPartOfParagraph() bool {
 	return true
 }
 
-func (b BlockInlineMath) DigDeeperForParagraphs() bool {
+func (b *BlockInlineMath) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -1465,7 +1470,7 @@ type BlockUl struct {
 	Indentation uint16
 }
 
-func (b BlockUl) String() string {
+func (b *BlockUl) String() string {
 	return fmt.Sprintf(
 		"BlockUl (indentation=%v), %v",
 		b.Indentation,
@@ -1478,7 +1483,7 @@ func (b *BlockUl) CheckBlockStarts(line LineStruct) bool {
 	return line.RuneJ == 0 && line.RuneContent[line.RuneJ] == '-'
 }
 
-func (b BlockUl) SeekBufferAfterBlockStarts() int {
+func (b *BlockUl) SeekBufferAfterBlockStarts() int {
 	return 0 // This will in fact be a li
 }
 
@@ -1490,11 +1495,11 @@ func (b *BlockUl) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = b.ContentStart
 }
 
-func (b *BlockUl) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockUl) CheckBlockEndsNormally(_ *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return false, nil, 0
 }
 
-func (b BlockUl) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockUl) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
 	return NewLines >= 1 || Indentation < b.Indentation
 }
 
@@ -1506,28 +1511,28 @@ func (b *BlockUl) ExecuteAfterBlockEnds(line *LineStruct) {
 	b.End = b.ContentEnd
 }
 
-func (b BlockUl) SeekBufferAfterBlockEnds() int {
+func (b *BlockUl) SeekBufferAfterBlockEnds() int {
 	return 0
 }
 
-func (b BlockUl) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockUl) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockUlLi{},
 	}
 }
 
-func (b BlockUl) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockUl) AcceptBlockInside(other BlockInterface) bool {
 	if reflect.TypeOf(other) != reflect.TypeOf(BlockUlLi{}) {
 		return true
 	}
 	return b.Indentation == other.(*BlockUlLi).Indentation
 }
 
-func (b BlockUl) IsPartOfParagraph() bool {
+func (b *BlockUl) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockUl) DigDeeperForParagraphs() bool {
+func (b *BlockUl) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -1548,7 +1553,7 @@ type BlockUlLi struct {
 	LineIndex   int
 }
 
-func (b BlockUlLi) String() string {
+func (b *BlockUlLi) String() string {
 	return fmt.Sprintf(
 		"BlockUlLi (indentation=%v, line-index=%v), %v",
 		b.Indentation,
@@ -1563,7 +1568,7 @@ func (b *BlockUlLi) CheckBlockStarts(line LineStruct) bool {
 	return line.RuneJ == 0 && line.RuneContent[line.RuneJ] == '-'
 }
 
-func (b BlockUlLi) SeekBufferAfterBlockStarts() int {
+func (b *BlockUlLi) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -1578,7 +1583,7 @@ func (b *BlockUlLi) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockUlLi) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockUlLi) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	// Ignore the same li
 	if line.LineIndex == b.LineIndex {
 		return false, nil, 0
@@ -1595,7 +1600,7 @@ func (b *BlockUlLi) CheckBlockEndsNormally(line *LineStruct, parsing_stack Parsi
 	return line.Indentation != b.Indentation+2, nil, 0
 }
 
-func (b BlockUlLi) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockUlLi) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
 	return NewLines >= 1 && Indentation != b.Indentation+2
 }
 
@@ -1607,11 +1612,11 @@ func (b *BlockUlLi) ExecuteAfterBlockEnds(line *LineStruct) {
 	b.ContentEnd = b.End
 }
 
-func (b BlockUlLi) SeekBufferAfterBlockEnds() int {
+func (b *BlockUlLi) SeekBufferAfterBlockEnds() int {
 	return 0
 }
 
-func (b BlockUlLi) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockUlLi) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
@@ -1621,7 +1626,7 @@ func (b BlockUlLi) GetBlocksAllowedInside() []BlockInterface {
 		&BlockInlineCodeListing{},
 		&BlockMath{},
 		&BlockInlineMath{},
-		&BlockTextbox{},
+		&BlockTextBox{},
 		&BlockFigure{},
 		&BlockUl{},
 		&BlockOl{},
@@ -1630,15 +1635,15 @@ func (b BlockUlLi) GetBlocksAllowedInside() []BlockInterface {
 	}
 }
 
-func (b BlockUlLi) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockUlLi) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockUlLi) IsPartOfParagraph() bool {
+func (b *BlockUlLi) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockUlLi) DigDeeperForParagraphs() bool {
+func (b *BlockUlLi) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -1656,25 +1661,25 @@ func (b *BlockUlLi) GetRawContent() *string {
 type BlockOlType uint8
 
 const (
-	OlType_1 BlockOlType = iota
-	OlType_A
-	OlType_a
-	OlType_I
-	OlType_i
+	BlockOlTypeNumber BlockOlType = iota
+	BlockOlTypeLetterCapital
+	BlockOlTypeLetter
+	BlockOlTypeRomanCapital
+	BlockOlTypeRoman
 )
 
 func (t BlockOlType) String() string {
 	switch t {
-	case OlType_1:
-		return "OlType_1 <=> 1. ..."
-	case OlType_A:
-		return "OlType_A <=> A. ..."
-	case OlType_a:
-		return "OlType_a <=> a. ..."
-	case OlType_I:
-		return "OlType_I <=> I. ..."
-	case OlType_i:
-		return "OlType_i <=> i. ..."
+	case BlockOlTypeNumber:
+		return "Number <=> 1. ..."
+	case BlockOlTypeLetterCapital:
+		return "LetterCapital <=> A. ..."
+	case BlockOlTypeLetter:
+		return "Letter <=> a. ..."
+	case BlockOlTypeRomanCapital:
+		return "RomanCapital <=> I. ..."
+	case BlockOlTypeRoman:
+		return "Roman <=> i. ..."
 	default:
 		panic(nil) // This should never be reached
 	}
@@ -1686,7 +1691,7 @@ type BlockOl struct {
 	TypeOfBlock BlockOlType
 }
 
-func (b BlockOl) String() string {
+func (b *BlockOl) String() string {
 	return fmt.Sprintf(
 		"BlockOl (indentation=%v, type=%v), %v",
 		b.Indentation,
@@ -1700,23 +1705,23 @@ func (b *BlockOl) CheckBlockStarts(line LineStruct) bool {
 	if line.RuneJ != 1 {
 		return false
 	}
-	if line.RuneContent[line.RuneJ-1] >= rune('1') && line.RuneContent[line.RuneJ-1] <= rune('9') {
-		b.TypeOfBlock = OlType_1
-	} else if line.RuneContent[line.RuneJ-1] == rune('I') {
-		b.TypeOfBlock = OlType_I
-	} else if line.RuneContent[line.RuneJ-1] == rune('i') {
-		b.TypeOfBlock = OlType_i
-	} else if line.RuneContent[line.RuneJ-1] >= rune('A') && line.RuneContent[line.RuneJ-1] <= rune('Z') { // excepts I
-		b.TypeOfBlock = OlType_A
-	} else if line.RuneContent[line.RuneJ-1] >= rune('a') && line.RuneContent[line.RuneJ-1] <= rune('z') { // excepts i
-		b.TypeOfBlock = OlType_a
+	if line.RuneContent[line.RuneJ-1] >= '1' && line.RuneContent[line.RuneJ-1] <= '9' {
+		b.TypeOfBlock = BlockOlTypeNumber
+	} else if line.RuneContent[line.RuneJ-1] == 'I' {
+		b.TypeOfBlock = BlockOlTypeRomanCapital
+	} else if line.RuneContent[line.RuneJ-1] == 'i' {
+		b.TypeOfBlock = BlockOlTypeRoman
+	} else if line.RuneContent[line.RuneJ-1] >= 'A' && line.RuneContent[line.RuneJ-1] <= 'Z' { // excepts I
+		b.TypeOfBlock = BlockOlTypeLetterCapital
+	} else if line.RuneContent[line.RuneJ-1] >= 'a' && line.RuneContent[line.RuneJ-1] <= 'z' { // excepts i
+		b.TypeOfBlock = BlockOlTypeLetter
 	} else {
 		return false
 	}
 	return line.RuneContent[line.RuneJ] == '.'
 }
 
-func (b BlockOl) SeekBufferAfterBlockStarts() int {
+func (b *BlockOl) SeekBufferAfterBlockStarts() int {
 	return 0 // This will in fact be a li
 }
 
@@ -1728,11 +1733,11 @@ func (b *BlockOl) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = b.ContentStart
 }
 
-func (b *BlockOl) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockOl) CheckBlockEndsNormally(_ *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return false, nil, 0
 }
 
-func (b BlockOl) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockOl) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
 	return NewLines >= 1 || Indentation < b.Indentation
 }
 
@@ -1744,17 +1749,17 @@ func (b *BlockOl) ExecuteAfterBlockEnds(line *LineStruct) {
 	b.End = b.ContentEnd
 }
 
-func (b BlockOl) SeekBufferAfterBlockEnds() int {
+func (b *BlockOl) SeekBufferAfterBlockEnds() int {
 	return 0
 }
 
-func (b BlockOl) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockOl) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockOlLi{},
 	}
 }
 
-func (b BlockOl) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockOl) AcceptBlockInside(other BlockInterface) bool {
 	if reflect.TypeOf(other) != reflect.TypeOf(&BlockOlLi{}) {
 		return true
 	}
@@ -1764,11 +1769,11 @@ func (b BlockOl) AcceptBlockInside(other BlockInterface) bool {
 	return b.TypeOfBlock == other.(*BlockOlLi).TypeOfBlock
 }
 
-func (b BlockOl) IsPartOfParagraph() bool {
+func (b *BlockOl) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockOl) DigDeeperForParagraphs() bool {
+func (b *BlockOl) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -1790,7 +1795,7 @@ type BlockOlLi struct {
 	TypeOfBlock BlockOlType
 }
 
-func (b BlockOlLi) String() string {
+func (b *BlockOlLi) String() string {
 	return fmt.Sprintf(
 		"BlockOlLi (indentation=%v, line-index=%v, type=%v), %v",
 		b.Indentation,
@@ -1806,23 +1811,23 @@ func (b *BlockOlLi) CheckBlockStarts(line LineStruct) bool {
 	if line.RuneJ != 1 {
 		return false
 	}
-	if line.RuneContent[line.RuneJ-1] >= rune('1') && line.RuneContent[line.RuneJ-1] <= rune('9') {
-		b.TypeOfBlock = OlType_1
-	} else if line.RuneContent[line.RuneJ-1] == rune('I') {
-		b.TypeOfBlock = OlType_I
-	} else if line.RuneContent[line.RuneJ-1] == rune('i') {
-		b.TypeOfBlock = OlType_i
-	} else if line.RuneContent[line.RuneJ-1] >= rune('A') && line.RuneContent[line.RuneJ-1] <= rune('Z') { // excepts I
-		b.TypeOfBlock = OlType_A
-	} else if line.RuneContent[line.RuneJ-1] >= rune('a') && line.RuneContent[line.RuneJ-1] <= rune('z') { // excepts i
-		b.TypeOfBlock = OlType_a
+	if line.RuneContent[line.RuneJ-1] >= '1' && line.RuneContent[line.RuneJ-1] <= '9' {
+		b.TypeOfBlock = BlockOlTypeNumber
+	} else if line.RuneContent[line.RuneJ-1] == 'I' {
+		b.TypeOfBlock = BlockOlTypeRomanCapital
+	} else if line.RuneContent[line.RuneJ-1] == 'i' {
+		b.TypeOfBlock = BlockOlTypeRoman
+	} else if line.RuneContent[line.RuneJ-1] >= 'A' && line.RuneContent[line.RuneJ-1] <= 'Z' { // excepts I
+		b.TypeOfBlock = BlockOlTypeLetterCapital
+	} else if line.RuneContent[line.RuneJ-1] >= 'a' && line.RuneContent[line.RuneJ-1] <= 'z' { // excepts i
+		b.TypeOfBlock = BlockOlTypeLetter
 	} else {
 		return false
 	}
 	return line.RuneContent[line.RuneJ] == '.'
 }
 
-func (b BlockOlLi) SeekBufferAfterBlockStarts() int {
+func (b *BlockOlLi) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -1837,7 +1842,7 @@ func (b *BlockOlLi) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockOlLi) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockOlLi) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	// Ignore the same li
 	if line.LineIndex == b.LineIndex {
 		return false, nil, 0
@@ -1854,7 +1859,7 @@ func (b *BlockOlLi) CheckBlockEndsNormally(line *LineStruct, parsing_stack Parsi
 	return line.Indentation != b.Indentation+3, nil, 0
 }
 
-func (b BlockOlLi) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockOlLi) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
 	return NewLines >= 1 && Indentation != b.Indentation+3
 }
 
@@ -1866,11 +1871,11 @@ func (b *BlockOlLi) ExecuteAfterBlockEnds(line *LineStruct) {
 	b.ContentEnd = b.End
 }
 
-func (b BlockOlLi) SeekBufferAfterBlockEnds() int {
+func (b *BlockOlLi) SeekBufferAfterBlockEnds() int {
 	return 0
 }
 
-func (b BlockOlLi) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockOlLi) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
@@ -1880,7 +1885,7 @@ func (b BlockOlLi) GetBlocksAllowedInside() []BlockInterface {
 		&BlockInlineCodeListing{},
 		&BlockMath{},
 		&BlockInlineMath{},
-		&BlockTextbox{},
+		&BlockTextBox{},
 		&BlockFigure{},
 		&BlockUl{},
 		&BlockOl{},
@@ -1889,15 +1894,15 @@ func (b BlockOlLi) GetBlocksAllowedInside() []BlockInterface {
 	}
 }
 
-func (b BlockOlLi) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockOlLi) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockOlLi) IsPartOfParagraph() bool {
+func (b *BlockOlLi) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockOlLi) DigDeeperForParagraphs() bool {
+func (b *BlockOlLi) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -1919,7 +1924,7 @@ type BlockFigure struct {
 	Padding  string
 }
 
-func (b BlockFigure) String() string {
+func (b *BlockFigure) String() string {
 	return fmt.Sprintf(
 		"BlockFigure (max-width=%v, dock=%v, padding=%v), %v",
 		b.MaxWidth,
@@ -1936,7 +1941,7 @@ func (b *BlockFigure) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesStartsWithASCII(line.RuneContent[line.RuneJ:], "|figure>")
 }
 
-func (b BlockFigure) SeekBufferAfterBlockStarts() int {
+func (b *BlockFigure) SeekBufferAfterBlockStarts() int {
 	return 8
 }
 
@@ -1975,11 +1980,11 @@ func (b *BlockFigure) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockFigure) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockFigure) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<figure|"), nil, 0
 }
 
-func (b BlockFigure) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockFigure) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -1994,28 +1999,28 @@ func (b *BlockFigure) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockFigure) SeekBufferAfterBlockEnds() int {
+func (b *BlockFigure) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockFigure) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockFigure) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
-		&BlockSubfigure{},
+		&BlockSubFigure{},
 	}
 }
 
-func (b BlockFigure) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockFigure) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockFigure) IsPartOfParagraph() bool {
+func (b *BlockFigure) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockFigure) DigDeeperForParagraphs() bool {
+func (b *BlockFigure) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -2028,32 +2033,32 @@ func (b *BlockFigure) GetRawContent() *string {
 }
 
 // =====================================
-// Subfigures
+// SubFigures
 
-type BlockSubfigure struct {
+type BlockSubFigure struct {
 	BlockStruct
 	Source  string
 	Padding string
 }
 
-func (b BlockSubfigure) String() string {
+func (b *BlockSubFigure) String() string {
 	return fmt.Sprintf(
-		"BlockSubfigure (source=%v, padding=%v), %v",
+		"BlockSubFigure (source=%v, padding=%v), %v",
 		b.Source,
 		b.Padding,
 		b.BlockStruct.String(),
 	)
 }
 
-func (b *BlockSubfigure) CheckBlockStarts(line LineStruct) bool {
+func (b *BlockSubFigure) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|subfigure>")
 }
 
-func (b BlockSubfigure) SeekBufferAfterBlockStarts() int {
+func (b *BlockSubFigure) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
-func (b *BlockSubfigure) ExecuteAfterBlockStarts(line *LineStruct) {
+func (b *BlockSubFigure) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 11,
@@ -2071,11 +2076,11 @@ func (b *BlockSubfigure) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockSubfigure) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockSubFigure) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<subfigure|"), nil, 0
 }
 
-func (b *BlockSubfigure) ExecuteAfterBlockEnds(line *LineStruct) {
+func (b *BlockSubFigure) ExecuteAfterBlockEnds(line *LineStruct) {
 	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
@@ -2086,15 +2091,15 @@ func (b *BlockSubfigure) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockSubfigure) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockSubFigure) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
-func (b BlockSubfigure) SeekBufferAfterBlockEnds() int {
+func (b *BlockSubFigure) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockSubfigure) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockSubFigure) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
@@ -2108,23 +2113,23 @@ func (b BlockSubfigure) GetBlocksAllowedInside() []BlockInterface {
 	}
 }
 
-func (b BlockSubfigure) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockSubFigure) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockSubfigure) IsPartOfParagraph() bool {
+func (b *BlockSubFigure) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockSubfigure) DigDeeperForParagraphs() bool {
+func (b *BlockSubFigure) DigDeeperForParagraphs() bool {
 	return true
 }
 
-func (b *BlockSubfigure) GetBlockStruct() *BlockStruct {
+func (b *BlockSubFigure) GetBlockStruct() *BlockStruct {
 	return &b.BlockStruct
 }
 
-func (b *BlockSubfigure) GetRawContent() *string {
+func (b *BlockSubFigure) GetRawContent() *string {
 	return nil
 }
 
@@ -2137,7 +2142,7 @@ type BlockTabs struct {
 	SelectedIndex int
 }
 
-func (b BlockTabs) String() string {
+func (b *BlockTabs) String() string {
 	return fmt.Sprintf(
 		"BlockTabs (tabs=%v), %v",
 		b.Tabs,
@@ -2149,7 +2154,7 @@ func (b *BlockTabs) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|tabs>")
 }
 
-func (b BlockTabs) SeekBufferAfterBlockStarts() int {
+func (b *BlockTabs) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -2160,11 +2165,11 @@ func (b *BlockTabs) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 	options := GatherBlockOptions(line, []string{"selected"})
 	if value, ok := options["selected"]; ok {
-		value_int, err := strconv.Atoi(value)
-		if err != nil || value_int < 0 {
+		valueInt, err := strconv.Atoi(value)
+		if err != nil || valueInt < 0 {
 			log.Warnf("Could not use tabs option [selected=%v]. Please use natural numbers", value)
 		}
-		b.SelectedIndex = value_int
+		b.SelectedIndex = valueInt
 	}
 	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
@@ -2172,11 +2177,11 @@ func (b *BlockTabs) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockTabs) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockTabs) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<tabs|"), nil, 0
 }
 
-func (b BlockTabs) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockTabs) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -2191,11 +2196,11 @@ func (b *BlockTabs) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockTabs) SeekBufferAfterBlockEnds() int {
+func (b *BlockTabs) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockTabs) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockTabs) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
@@ -2204,15 +2209,15 @@ func (b BlockTabs) GetBlocksAllowedInside() []BlockInterface {
 	}
 }
 
-func (b BlockTabs) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockTabs) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockTabs) IsPartOfParagraph() bool {
+func (b *BlockTabs) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockTabs) DigDeeperForParagraphs() bool {
+func (b *BlockTabs) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -2225,7 +2230,7 @@ func (b *BlockTabs) GetRawContent() *string {
 }
 
 // =====================================
-// Subfigures
+// Tabs tabs
 
 type BlockTabsTab struct {
 	BlockStruct
@@ -2233,7 +2238,7 @@ type BlockTabsTab struct {
 	IsSelected bool
 }
 
-func (b BlockTabsTab) String() string {
+func (b *BlockTabsTab) String() string {
 	return fmt.Sprintf(
 		"BlockTabsTab (name=%v), %v",
 		b.Name,
@@ -2245,7 +2250,7 @@ func (b *BlockTabsTab) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|tab>")
 }
 
-func (b BlockTabsTab) SeekBufferAfterBlockStarts() int {
+func (b *BlockTabsTab) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -2264,7 +2269,7 @@ func (b *BlockTabsTab) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockTabsTab) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockTabsTab) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<tab|"), nil, 0
 }
 
@@ -2279,21 +2284,21 @@ func (b *BlockTabsTab) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockTabsTab) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockTabsTab) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
-func (b BlockTabsTab) SeekBufferAfterBlockEnds() int {
+func (b *BlockTabsTab) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockTabsTab) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockTabsTab) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
 		&BlockLaTeX{},
 		&BlockTabs{},
-		&BlockTextbox{},
+		&BlockTextBox{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},
@@ -2303,15 +2308,15 @@ func (b BlockTabsTab) GetBlocksAllowedInside() []BlockInterface {
 	}
 }
 
-func (b BlockTabsTab) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockTabsTab) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockTabsTab) IsPartOfParagraph() bool {
+func (b *BlockTabsTab) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockTabsTab) DigDeeperForParagraphs() bool {
+func (b *BlockTabsTab) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -2331,7 +2336,7 @@ type BlockFootnote struct {
 	FootnoteIndex int
 }
 
-func (b BlockFootnote) String() string {
+func (b *BlockFootnote) String() string {
 	return fmt.Sprintf(
 		"BlockFootnote (index=%v), %v",
 		b.FootnoteIndex,
@@ -2343,7 +2348,7 @@ func (b *BlockFootnote) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|footnote>")
 }
 
-func (b BlockFootnote) SeekBufferAfterBlockStarts() int {
+func (b *BlockFootnote) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -2358,11 +2363,11 @@ func (b *BlockFootnote) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockFootnote) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockFootnote) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<footnote|"), nil, 0
 }
 
-func (b BlockFootnote) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockFootnote) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -2377,11 +2382,11 @@ func (b *BlockFootnote) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockFootnote) SeekBufferAfterBlockEnds() int {
+func (b *BlockFootnote) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockFootnote) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockFootnote) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		&BlockComment{},
 		&BlockHTML{},
@@ -2396,15 +2401,15 @@ func (b BlockFootnote) GetBlocksAllowedInside() []BlockInterface {
 	}
 }
 
-func (b BlockFootnote) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockFootnote) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockFootnote) IsPartOfParagraph() bool {
+func (b *BlockFootnote) IsPartOfParagraph() bool {
 	return true
 }
 
-func (b BlockFootnote) DigDeeperForParagraphs() bool {
+func (b *BlockFootnote) DigDeeperForParagraphs() bool {
 	return true
 }
 
@@ -2426,7 +2431,7 @@ type BlockRef struct {
 	ReferenceIndex int
 }
 
-func (b BlockRef) String() string {
+func (b *BlockRef) String() string {
 	return fmt.Sprintf(
 		"BlockRef (file=%v), %v :: \"%v\"",
 		b.File,
@@ -2439,7 +2444,7 @@ func (b *BlockRef) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|ref>")
 }
 
-func (b BlockRef) SeekBufferAfterBlockStarts() int {
+func (b *BlockRef) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -2458,11 +2463,11 @@ func (b *BlockRef) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockRef) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockRef) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<ref|"), nil, 0
 }
 
-func (b BlockRef) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockRef) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -2477,23 +2482,23 @@ func (b *BlockRef) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockRef) SeekBufferAfterBlockEnds() int {
+func (b *BlockRef) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockRef) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockRef) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockRef) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockRef) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockRef) IsPartOfParagraph() bool {
+func (b *BlockRef) IsPartOfParagraph() bool {
 	return true
 }
 
-func (b BlockRef) DigDeeperForParagraphs() bool {
+func (b *BlockRef) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -2514,7 +2519,7 @@ type BlockBibliography struct {
 	LaTeXContent *string
 }
 
-func (b BlockBibliography) String() string {
+func (b *BlockBibliography) String() string {
 	hc := "<nil>"
 	if b.HTMLContent != nil {
 		hc = *b.HTMLContent
@@ -2535,7 +2540,7 @@ func (b *BlockBibliography) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|bibliography>")
 }
 
-func (b BlockBibliography) SeekBufferAfterBlockStarts() int {
+func (b *BlockBibliography) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -2550,11 +2555,11 @@ func (b *BlockBibliography) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockBibliography) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockBibliography) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<bibliography|"), nil, 0
 }
 
-func (b BlockBibliography) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockBibliography) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -2569,23 +2574,23 @@ func (b *BlockBibliography) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockBibliography) SeekBufferAfterBlockEnds() int {
+func (b *BlockBibliography) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockBibliography) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockBibliography) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockBibliography) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockBibliography) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockBibliography) IsPartOfParagraph() bool {
+func (b *BlockBibliography) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockBibliography) DigDeeperForParagraphs() bool {
+func (b *BlockBibliography) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -2604,7 +2609,7 @@ type BlockMeta struct {
 	BlockStruct
 }
 
-func (b BlockMeta) String() string {
+func (b *BlockMeta) String() string {
 	return fmt.Sprintf(
 		"BlockMeta, %v",
 		b.BlockStruct.String(),
@@ -2615,7 +2620,7 @@ func (b *BlockMeta) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|meta>")
 }
 
-func (b BlockMeta) SeekBufferAfterBlockStarts() int {
+func (b *BlockMeta) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -2630,11 +2635,11 @@ func (b *BlockMeta) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockMeta) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockMeta) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<meta|"), nil, 0
 }
 
-func (b BlockMeta) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockMeta) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -2649,28 +2654,28 @@ func (b *BlockMeta) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockMeta) SeekBufferAfterBlockEnds() int {
+func (b *BlockMeta) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockMeta) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockMeta) GetBlocksAllowedInside() []BlockInterface {
 	return []BlockInterface{
 		// &BlockComment{}, - not needed, will not be ported to HTML
 		&BlockMetaAuthor{},
 		&BlockMetaCopyright{},
-		&BlockMetaBibinfo{},
+		&BlockMetaBibInfo{},
 	}
 }
 
-func (b BlockMeta) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockMeta) AcceptBlockInside(_ BlockInterface) bool {
 	return true
 }
 
-func (b BlockMeta) IsPartOfParagraph() bool {
+func (b *BlockMeta) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockMeta) DigDeeperForParagraphs() bool {
+func (b *BlockMeta) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -2690,7 +2695,7 @@ type BlockMetaAuthor struct {
 	RawContent string
 }
 
-func (b BlockMetaAuthor) String() string {
+func (b *BlockMetaAuthor) String() string {
 	return fmt.Sprintf(
 		"BlockMetaAuthor, %v :: \"%v\"",
 		b.BlockStruct.String(),
@@ -2702,7 +2707,7 @@ func (b *BlockMetaAuthor) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|author>")
 }
 
-func (b BlockMetaAuthor) SeekBufferAfterBlockStarts() int {
+func (b *BlockMetaAuthor) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -2717,11 +2722,11 @@ func (b *BlockMetaAuthor) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockMetaAuthor) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockMetaAuthor) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<author|"), nil, 0
 }
 
-func (b BlockMetaAuthor) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockMetaAuthor) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -2736,23 +2741,23 @@ func (b *BlockMetaAuthor) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockMetaAuthor) SeekBufferAfterBlockEnds() int {
+func (b *BlockMetaAuthor) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockMetaAuthor) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockMetaAuthor) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockMetaAuthor) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockMetaAuthor) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockMetaAuthor) IsPartOfParagraph() bool {
+func (b *BlockMetaAuthor) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockMetaAuthor) DigDeeperForParagraphs() bool {
+func (b *BlockMetaAuthor) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -2772,7 +2777,7 @@ type BlockMetaCopyright struct {
 	RawContent string
 }
 
-func (b BlockMetaCopyright) String() string {
+func (b *BlockMetaCopyright) String() string {
 	return fmt.Sprintf(
 		"BlockMetaCopyright, %v :: \"%v\"",
 		b.BlockStruct.String(),
@@ -2784,7 +2789,7 @@ func (b *BlockMetaCopyright) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|copyright>")
 }
 
-func (b BlockMetaCopyright) SeekBufferAfterBlockStarts() int {
+func (b *BlockMetaCopyright) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
@@ -2799,11 +2804,11 @@ func (b *BlockMetaCopyright) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockMetaCopyright) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockMetaCopyright) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<copyright|"), nil, 0
 }
 
-func (b BlockMetaCopyright) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockMetaCopyright) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
@@ -2818,23 +2823,23 @@ func (b *BlockMetaCopyright) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockMetaCopyright) SeekBufferAfterBlockEnds() int {
+func (b *BlockMetaCopyright) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockMetaCopyright) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockMetaCopyright) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockMetaCopyright) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockMetaCopyright) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockMetaCopyright) IsPartOfParagraph() bool {
+func (b *BlockMetaCopyright) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockMetaCopyright) DigDeeperForParagraphs() bool {
+func (b *BlockMetaCopyright) DigDeeperForParagraphs() bool {
 	return false
 }
 
@@ -2849,31 +2854,31 @@ func (b *BlockMetaCopyright) GetRawContent() *string {
 // =====================================
 // Meta info - bibliography
 
-type BlockMetaBibinfo struct {
+type BlockMetaBibInfo struct {
 	BlockStruct
 	RawContent string
 	JSONInline bool
 	RefFile    string
 }
 
-func (b BlockMetaBibinfo) String() string {
+func (b *BlockMetaBibInfo) String() string {
 	return fmt.Sprintf(
-		"BlockMetaBibinfo (inline=%v), %v :: \"%v\"",
+		"BlockMetaBibInfo (inline=%v), %v :: \"%v\"",
 		b.JSONInline,
 		b.BlockStruct.String(),
 		b.RawContent,
 	)
 }
 
-func (b *BlockMetaBibinfo) CheckBlockStarts(line LineStruct) bool {
+func (b *BlockMetaBibInfo) CheckBlockStarts(line LineStruct) bool {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|bibinfo>")
 }
 
-func (b BlockMetaBibinfo) SeekBufferAfterBlockStarts() int {
+func (b *BlockMetaBibInfo) SeekBufferAfterBlockStarts() int {
 	return 1
 }
 
-func (b *BlockMetaBibinfo) ExecuteAfterBlockStarts(line *LineStruct) {
+func (b *BlockMetaBibInfo) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 9,
@@ -2891,15 +2896,15 @@ func (b *BlockMetaBibinfo) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockMetaBibinfo) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockMetaBibInfo) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<bibinfo|"), nil, 0
 }
 
-func (b BlockMetaBibinfo) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockMetaBibInfo) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false
 }
 
-func (b *BlockMetaBibinfo) ExecuteAfterBlockEnds(line *LineStruct) {
+func (b *BlockMetaBibInfo) ExecuteAfterBlockEnds(line *LineStruct) {
 	b.End = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ,
@@ -2910,31 +2915,31 @@ func (b *BlockMetaBibinfo) ExecuteAfterBlockEnds(line *LineStruct) {
 	}
 }
 
-func (b BlockMetaBibinfo) SeekBufferAfterBlockEnds() int {
+func (b *BlockMetaBibInfo) SeekBufferAfterBlockEnds() int {
 	return 1
 }
 
-func (b BlockMetaBibinfo) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockMetaBibInfo) GetBlocksAllowedInside() []BlockInterface {
 	return nil
 }
 
-func (b BlockMetaBibinfo) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockMetaBibInfo) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockMetaBibinfo) IsPartOfParagraph() bool {
+func (b *BlockMetaBibInfo) IsPartOfParagraph() bool {
 	return false
 }
 
-func (b BlockMetaBibinfo) DigDeeperForParagraphs() bool {
+func (b *BlockMetaBibInfo) DigDeeperForParagraphs() bool {
 	return false
 }
 
-func (b *BlockMetaBibinfo) GetBlockStruct() *BlockStruct {
+func (b *BlockMetaBibInfo) GetBlockStruct() *BlockStruct {
 	return &b.BlockStruct
 }
 
-func (b *BlockMetaBibinfo) GetRawContent() *string {
+func (b *BlockMetaBibInfo) GetRawContent() *string {
 	return &b.RawContent
 }
 
@@ -2945,58 +2950,58 @@ type BlockInline struct {
 	Content InlineInterface
 }
 
-func (b BlockInline) String() string {
+func (b *BlockInline) String() string {
 	return fmt.Sprintf(
 		"(BlockInline->)%v",
 		b.Content.String(),
 	)
 }
 
-func (b BlockInline) CheckBlockStarts(line LineStruct) bool {
+func (b *BlockInline) CheckBlockStarts(_ LineStruct) bool {
 	return false // irrelevant
 }
 
-func (b BlockInline) SeekBufferAfterBlockStarts() int {
+func (b *BlockInline) SeekBufferAfterBlockStarts() int {
 	return 0 // irrelevant
 }
 
-func (b BlockInline) ExecuteAfterBlockStarts(line *LineStruct) {
+func (b *BlockInline) ExecuteAfterBlockStarts(_ *LineStruct) {
 	// irrelevant
 }
 
-func (b BlockInline) CheckBlockEndsNormally(line *LineStruct, parsing_stack ParsingStack) (bool, BlockInterface, int) {
+func (b *BlockInline) CheckBlockEndsNormally(_ *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
 	return false, nil, 0 // irrelevant
 }
 
-func (b BlockInline) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
+func (b *BlockInline) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
 	return false // irrelevant
 }
 
-func (b BlockInline) ExecuteAfterBlockEnds(line *LineStruct) {
+func (b *BlockInline) ExecuteAfterBlockEnds(_ *LineStruct) {
 	// irrelevant
 }
 
-func (b BlockInline) SeekBufferAfterBlockEnds() int {
+func (b *BlockInline) SeekBufferAfterBlockEnds() int {
 	return 1 // irrelevant
 }
 
-func (b BlockInline) GetBlocksAllowedInside() []BlockInterface {
+func (b *BlockInline) GetBlocksAllowedInside() []BlockInterface {
 	return nil // irrelevant
 }
 
-func (b BlockInline) AcceptBlockInside(other BlockInterface) bool {
+func (b *BlockInline) AcceptBlockInside(_ BlockInterface) bool {
 	return false // irrelevant
 }
 
-func (b BlockInline) IsPartOfParagraph() bool {
+func (b *BlockInline) IsPartOfParagraph() bool {
 	return true // irrelevant
 }
 
-func (b BlockInline) DigDeeperForParagraphs() bool {
+func (b *BlockInline) DigDeeperForParagraphs() bool {
 	return true // irrelevant
 }
 
-func (b BlockInline) GetBlockStruct() *BlockStruct {
+func (b *BlockInline) GetBlockStruct() *BlockStruct {
 	return new(BlockStruct) // irrelevant
 }
 

@@ -33,7 +33,7 @@ import (
 // Parsing stack structure
 
 type ParsingStack struct {
-	InsideTextbox   uint32
+	InsideTextBox   uint32
 	InsideParagraph uint32
 }
 
@@ -63,61 +63,62 @@ func (m MDMetaStructure) Serialize() []byte {
 // =====================================
 // Tree parse
 
-func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
-	parsing_stack := ParsingStack{}
-	current_block := &(Tree[BlockInterface]{})
-	current_block.Value = &BlockDocument{}
-	allowed_inside_block := current_block.Value.GetBlocksAllowedInside()
+// Parse Please note that this will modify RuneJs
+func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
+	parsingStack := ParsingStack{}
+	currentBlock := &(Tree[BlockInterface]{})
+	currentBlock.Value = &BlockDocument{}
+	allowedInsideBlock := currentBlock.Value.GetBlocksAllowedInside()
 
-	just_skipped := INF_BLANKS
+	justSkipped := 16 // considered infinite
 	for i := range file.Lines {
 		if file.Lines[i].Empty() {
-			just_skipped++
+			justSkipped++
 			continue
 		}
 		for file.Lines[i].RuneJ < len(file.Lines[i].RuneContent) {
 			if file.Lines[i].RuneJ > 0 {
-				just_skipped = 0
+				justSkipped = 0
 			}
 			// Check if we can end this block
 			for file.Lines[i].RuneJ < len(file.Lines[i].RuneContent) {
-				should_end_block, should_discard_block, should_discard_seek := current_block.Value.CheckBlockEndsNormally(&file.Lines[i], parsing_stack)
-				if !should_end_block {
-					should_end_block = current_block.Value.CheckBlockEndsViaNewLinesAndIndentation(just_skipped, file.Lines[i].Indentation)
+				shouldEndBlock, shouldDiscardBlock, shouldDiscardSeek := currentBlock.Value.CheckBlockEndsNormally(&file.Lines[i], parsingStack)
+				if !shouldEndBlock {
+					shouldEndBlock = currentBlock.Value.CheckBlockEndsViaNewLinesAndIndentation(justSkipped, file.Lines[i].Indentation)
 				}
-				if !should_end_block {
+				if !shouldEndBlock {
 					break
 				}
 				log.Debugf(
 					"<<< End of %v (line-index=%v, line-j=%v)",
-					current_block.Value,
+					currentBlock.Value,
 					i, file.Lines[i].RuneJ,
 				)
 
-				switch reflect.TypeOf(current_block.Value) {
+				switch reflect.TypeOf(currentBlock.Value) {
 				case reflect.TypeOf(BlockParagraph{}):
-					parsing_stack.InsideParagraph--
-				case reflect.TypeOf(BlockTextbox{}):
-					parsing_stack.InsideTextbox--
+					parsingStack.InsideParagraph--
+				case reflect.TypeOf(BlockTextBox{}):
+					parsingStack.InsideTextBox--
 				}
 
 				// Discard if needed
-				if should_discard_block != nil {
-					file.Lines[i].RuneJ += should_discard_seek
-					for reflect.TypeOf(current_block.Value) != reflect.TypeOf(should_discard_block) {
-						fmt.Printf("SOFT Discarding %v (%T != %T)\n", current_block.Value, current_block.Value, should_discard_block)
+				if shouldDiscardBlock != nil {
+					file.Lines[i].RuneJ += shouldDiscardSeek
+					for reflect.TypeOf(currentBlock.Value) != reflect.TypeOf(shouldDiscardBlock) {
+						fmt.Printf("SOFT Discarding %v (%T != %T)\n", currentBlock.Value, currentBlock.Value, shouldDiscardBlock)
 						// TODO - remove
-						current_block.Value.ExecuteAfterBlockEnds(&file.Lines[i])
-						current_block = current_block.Parent
+						currentBlock.Value.ExecuteAfterBlockEnds(&file.Lines[i])
+						currentBlock = currentBlock.Parent
 					}
-					file.Lines[i].RuneJ -= should_discard_seek
+					file.Lines[i].RuneJ -= shouldDiscardSeek
 				}
 
-				file.Lines[i].RuneJ += current_block.Value.SeekBufferAfterBlockEnds()
-				current_block.Value.ExecuteAfterBlockEnds(&file.Lines[i])
-				current_block = current_block.Parent
+				file.Lines[i].RuneJ += currentBlock.Value.SeekBufferAfterBlockEnds()
+				currentBlock.Value.ExecuteAfterBlockEnds(&file.Lines[i])
+				currentBlock = currentBlock.Parent
 
-				allowed_inside_block = current_block.Value.GetBlocksAllowedInside()
+				allowedInsideBlock = currentBlock.Value.GetBlocksAllowedInside()
 			}
 			if file.Lines[i].RuneJ >= len(file.Lines[i].RuneContent) {
 				break
@@ -125,15 +126,15 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 			// Check if we can open blocks
 			for found := true; found && file.Lines[i].RuneJ < len(file.Lines[i].RuneContent); {
 				found = false
-				for _, allowed := range allowed_inside_block {
-					if allowed.CheckBlockStarts(file.Lines[i]) && current_block.Value.AcceptBlockInside(allowed) {
+				for _, allowed := range allowedInsideBlock {
+					if allowed.CheckBlockStarts(file.Lines[i]) && currentBlock.Value.AcceptBlockInside(allowed) {
 						file.Lines[i].RuneJ += allowed.SeekBufferAfterBlockStarts()
-						next_block := &(Tree[BlockInterface]{})
-						next_block.Value = allowed
-						next_block.Parent = current_block
-						current_block.Children = append(current_block.Children, next_block)
-						current_block = next_block
-						allowed_inside_block = allowed.GetBlocksAllowedInside()
+						nextBlock := &(Tree[BlockInterface]{})
+						nextBlock.Value = allowed
+						nextBlock.Parent = currentBlock
+						currentBlock.Children = append(currentBlock.Children, nextBlock)
+						currentBlock = nextBlock
+						allowedInsideBlock = allowed.GetBlocksAllowedInside()
 						found = true
 						break
 					}
@@ -141,43 +142,43 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 				if !found {
 					file.Lines[i].RuneJ++
 				} else {
-					switch reflect.TypeOf(current_block.Value) {
+					switch reflect.TypeOf(currentBlock.Value) {
 					case reflect.TypeOf(&BlockParagraph{}):
-						parsing_stack.InsideParagraph++
-					case reflect.TypeOf(&BlockTextbox{}):
-						parsing_stack.InsideTextbox++
+						parsingStack.InsideParagraph++
+					case reflect.TypeOf(&BlockTextBox{}):
+						parsingStack.InsideTextBox++
 					}
-					current_block.Value.ExecuteAfterBlockStarts(&file.Lines[i])
+					currentBlock.Value.ExecuteAfterBlockStarts(&file.Lines[i])
 					log.Debugf(
 						">>> Beginning of %v (line-index=%v, line-j=%v)",
-						current_block.Value,
+						currentBlock.Value,
 						i, file.Lines[i].RuneJ,
 					)
 				}
 			}
 		}
-		just_skipped = 0
+		justSkipped = 0
 	}
 
 	// Get back to root
-	for current_block.Parent != nil {
-		switch reflect.TypeOf(current_block.Value) {
+	for currentBlock.Parent != nil {
+		switch reflect.TypeOf(currentBlock.Value) {
 		case reflect.TypeOf(BlockParagraph{}):
-			parsing_stack.InsideParagraph--
-		case reflect.TypeOf(BlockTextbox{}):
-			parsing_stack.InsideTextbox--
+			parsingStack.InsideParagraph--
+		case reflect.TypeOf(BlockTextBox{}):
+			parsingStack.InsideTextBox--
 		}
-		current_block.Value.ExecuteAfterBlockEnds(&file.Lines[len(file.Lines)-1])
-		current_block = current_block.Parent
+		currentBlock.Value.ExecuteAfterBlockEnds(&file.Lines[len(file.Lines)-1])
+		currentBlock = currentBlock.Parent
 	}
-	current_block.Value.GetBlockStruct().ContentEnd = Pair[int, int]{
+	currentBlock.Value.GetBlockStruct().ContentEnd = Pair[int, int]{
 		i: len(file.Lines) - 1,
 		j: len(file.Lines[len(file.Lines)-1].RuneContent),
 	}
 
 	// Find first non-paragraph
-	FirstNonParagraph := func(tree *Tree[BlockInterface], min_i int) int {
-		for i := min_i; i < len(tree.Children); i++ {
+	FirstNonParagraph := func(tree *Tree[BlockInterface], minI int) int {
+		for i := minI; i < len(tree.Children); i++ {
 			if !tree.Children[i].Value.IsPartOfParagraph() {
 				return i
 			}
@@ -188,21 +189,21 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 	// Create the number of detected paragraphs
 	DetectParagraphs := func(before, after Pair[int, int], file *FileStruct) []BlockParagraph {
 		var paragraphs []BlockParagraph
-		var current_paragraph string
+		var currentParagraph string
 
 		for i := before.i; i <= after.i; i++ {
 			var j = 0
-			var max_j = len(file.Lines[i].RuneContent)
+			var maxJ = len(file.Lines[i].RuneContent)
 			if i == before.i {
 				j = before.j
 			}
 			if i == after.i {
-				max_j = after.j
+				maxJ = after.j
 			}
-			current_paragraph += string(file.Lines[i].RuneContent[j:max_j]) + " "
+			currentParagraph += string(file.Lines[i].RuneContent[j:maxJ]) + " "
 			if file.Lines[i].Empty() || i == after.i {
-				current_paragraph = RemoveExcessSpaces(current_paragraph)
-				if current_paragraph != "" {
+				currentParagraph = RemoveExcessSpaces(currentParagraph)
+				if currentParagraph != "" {
 					end := Pair[int, int]{
 						i: i,
 						j: 0, // Default
@@ -220,7 +221,7 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 					})
 					before = end
 				}
-				current_paragraph = ""
+				currentParagraph = ""
 			}
 		}
 		return paragraphs
@@ -241,67 +242,67 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 		var before, after Pair[int, int]
 		before = tree.Value.GetBlockStruct().ContentStart
 
-		starting_i := 0
-		for i := FirstNonParagraph(tree, 0); i != -1; i = FirstNonParagraph(tree, starting_i) {
+		startingI := 0
+		for i := FirstNonParagraph(tree, 0); i != -1; i = FirstNonParagraph(tree, startingI) {
 			after = tree.Children[i].Value.GetBlockStruct().Start
-			next_before := tree.Children[i].Value.GetBlockStruct().End
-			if p := DetectParagraphs(before, after, &file); p != nil {
+			nextBefore := tree.Children[i].Value.GetBlockStruct().End
+			if p := DetectParagraphs(before, after, file); p != nil {
 				log.Debug("Detected paragraph between ", before, " and ", after, ": ", p)
-				generated_p := make([]*Tree[BlockInterface], len(p))
+				generatedP := make([]*Tree[BlockInterface], len(p))
 				for j := range p {
-					generated_p[j] = new(Tree[BlockInterface])
-					generated_p[j].Parent = tree
-					generated_p[j].Value = &p[j]
+					generatedP[j] = new(Tree[BlockInterface])
+					generatedP[j].Parent = tree
+					generatedP[j].Value = &p[j]
 				}
-				for ci, j := starting_i, 0; ci < i && j < len(p); ci++ {
+				for ci, j := startingI, 0; ci < i && j < len(p); ci++ {
 					for cbs := tree.Children[ci].Value.GetBlockStruct(); cbs.Start.i > p[j].ContentEnd.i; j++ {
 					}
-					tree.Children[ci].Parent = generated_p[j]
-					generated_p[j].Children = append(generated_p[j].Children, tree.Children[ci])
+					tree.Children[ci].Parent = generatedP[j]
+					generatedP[j].Children = append(generatedP[j].Children, tree.Children[ci])
 				}
 				// Remove old blocks
-				aux := make([]*Tree[BlockInterface], len(p)+len(tree.Children)-(i-starting_i))
-				copy(aux[:starting_i], tree.Children[:starting_i])
-				copy(aux[starting_i:starting_i+len(p)], generated_p)
-				copy(aux[starting_i+len(p):], tree.Children[i:])
+				aux := make([]*Tree[BlockInterface], len(p)+len(tree.Children)-(i-startingI))
+				copy(aux[:startingI], tree.Children[:startingI])
+				copy(aux[startingI:startingI+len(p)], generatedP)
+				copy(aux[startingI+len(p):], tree.Children[i:])
 				tree.Children = aux
-				starting_i += len(p)
+				startingI += len(p)
 			}
-			starting_i++
-			before = next_before
+			startingI++
+			before = nextBefore
 		}
 
 		after = tree.Value.GetBlockStruct().ContentEnd
-		if p := DetectParagraphs(before, after, &file); p != nil {
+		if p := DetectParagraphs(before, after, file); p != nil {
 			log.Debug("Detected paragraph between ", before, " and ", after, ": ", p)
-			generated_p := make([]*Tree[BlockInterface], len(p))
+			generatedP := make([]*Tree[BlockInterface], len(p))
 			for j := range p {
-				generated_p[j] = new(Tree[BlockInterface])
-				generated_p[j].Parent = tree
-				generated_p[j].Value = &p[j]
+				generatedP[j] = new(Tree[BlockInterface])
+				generatedP[j].Parent = tree
+				generatedP[j].Value = &p[j]
 			}
-			for ci, j := starting_i, 0; ci < len(tree.Children) && j < len(p); ci++ {
+			for ci, j := startingI, 0; ci < len(tree.Children) && j < len(p); ci++ {
 				for cbs := tree.Children[ci].Value.GetBlockStruct(); cbs.Start.i > p[j].ContentEnd.i; j++ {
 				}
-				tree.Children[ci].Parent = generated_p[j]
-				generated_p[j].Children = append(generated_p[j].Children, tree.Children[ci])
+				tree.Children[ci].Parent = generatedP[j]
+				generatedP[j].Children = append(generatedP[j].Children, tree.Children[ci])
 			}
 			// Remove old blocks
-			aux := make([]*Tree[BlockInterface], len(p)+len(tree.Children)-(len(tree.Children)-starting_i))
-			copy(aux[:starting_i], tree.Children[:starting_i])
-			copy(aux[starting_i:starting_i+len(p)], generated_p)
-			copy(aux[starting_i+len(p):], tree.Children[len(tree.Children):])
+			aux := make([]*Tree[BlockInterface], len(p)+len(tree.Children)-(len(tree.Children)-startingI))
+			copy(aux[:startingI], tree.Children[:startingI])
+			copy(aux[startingI:startingI+len(p)], generatedP)
+			copy(aux[startingI+len(p):], tree.Children[len(tree.Children):])
 			tree.Children = aux
-			starting_i += len(p)
+			startingI += len(p)
 		}
 	}
-	InsertParagraphs(current_block)
+	InsertParagraphs(currentBlock)
 
-	var md_meta MDMetaStructure
+	var mdMeta MDMetaStructure
 
-	// Parse paragraphs, raw content, subfigures and meta info
-	CompleteBibinfo := make(map[string]BibliographyEntry)
-	CompleteBibinfoNextRefIndex := 1
+	// Parse paragraphs, raw content, sub figures and meta info
+	CompleteBibInfo := make(map[string]BibliographyEntry)
+	CompleteBibInfoNextRefIndex := 1
 
 	var DFSNodeParse func(tree *Tree[BlockInterface])
 	RefBlocks := make([]*BlockRef, 0)
@@ -316,51 +317,51 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 		switch reflect.TypeOf(tree.Value) {
 		case reflect.TypeOf(&BlockParagraph{}):
 			ParseSingleParagraph(tree, file)
-		case reflect.TypeOf(&BlockSubfigure{}):
+		case reflect.TypeOf(&BlockSubFigure{}):
 			// Sanity check
 			if reflect.TypeOf(tree.Parent.Value) != reflect.TypeOf(&BlockFigure{}) {
 				panic(nil)
 			}
-			if tree.Value.(*BlockSubfigure).Padding == "" {
-				tree.Value.(*BlockSubfigure).Padding = tree.Parent.Value.(*BlockFigure).Padding
+			if tree.Value.(*BlockSubFigure).Padding == "" {
+				tree.Value.(*BlockSubFigure).Padding = tree.Parent.Value.(*BlockFigure).Padding
 			}
 		case reflect.TypeOf(&BlockMetaAuthor{}):
 			// Sanity check
 			if reflect.TypeOf(tree.Parent.Value) != reflect.TypeOf(&BlockMeta{}) {
 				panic(nil)
 			}
-			md_meta.Author = *tree.Value.GetRawContent()
+			mdMeta.Author = *tree.Value.GetRawContent()
 		case reflect.TypeOf(&BlockMetaCopyright{}):
 			// Sanity check
 			if reflect.TypeOf(tree.Parent.Value) != reflect.TypeOf(&BlockMeta{}) {
 				panic(nil)
 			}
-			md_meta.Copyright = *tree.Value.GetRawContent()
-		case reflect.TypeOf(&BlockMetaBibinfo{}):
+			mdMeta.Copyright = *tree.Value.GetRawContent()
+		case reflect.TypeOf(&BlockMetaBibInfo{}):
 			// Sanity check
 			if reflect.TypeOf(tree.Parent.Value) != reflect.TypeOf(&BlockMeta{}) {
 				panic(nil)
 			}
-			new_bibinfo := ParseBibinfo(tree.Value.(*BlockMetaBibinfo))
-			ordered_new_bibinfo := make([]string, 0)
-			for k := range new_bibinfo {
-				ordered_new_bibinfo = append(ordered_new_bibinfo, k)
+			newBibInfo := ParseBibInfo(tree.Value.(*BlockMetaBibInfo))
+			orderedNewBibInfo := make([]string, 0)
+			for k := range newBibInfo {
+				orderedNewBibInfo = append(orderedNewBibInfo, k)
 			}
-			sort.Strings(ordered_new_bibinfo)
-			for _, new_bibinfo_key := range ordered_new_bibinfo {
-				new_bibinfo_value := new_bibinfo[new_bibinfo_key]
-				if old_value, ok := (CompleteBibinfo[new_bibinfo_key]); ok {
-					log.Warnf("A bibliography entry for tag \"%v\" already exists (%v). Keeping the old value...", new_bibinfo_key, old_value)
+			sort.Strings(orderedNewBibInfo)
+			for _, newBibInfoKey := range orderedNewBibInfo {
+				newBibInfoValue := newBibInfo[newBibInfoKey]
+				if oldValue, ok := CompleteBibInfo[newBibInfoKey]; ok {
+					log.Warnf("A bibliography entry for tag \"%v\" already exists (%v). Keeping the old value...", newBibInfoKey, oldValue)
 					continue
 				}
-				CompleteBibinfo[new_bibinfo_key] = BibliographyEntry{
-					ParentBlock:    new_bibinfo_value.ParentBlock,
-					Type:           new_bibinfo_value.Type,
-					Fields:         new_bibinfo_value.Fields,
-					ReferenceIndex: CompleteBibinfoNextRefIndex,
-					File:           tree.Value.(*BlockMetaBibinfo).RefFile,
+				CompleteBibInfo[newBibInfoKey] = BibliographyEntry{
+					ParentBlock:    newBibInfoValue.ParentBlock,
+					Type:           newBibInfoValue.Type,
+					Fields:         newBibInfoValue.Fields,
+					ReferenceIndex: CompleteBibInfoNextRefIndex,
+					File:           tree.Value.(*BlockMetaBibInfo).RefFile,
 				}
-				CompleteBibinfoNextRefIndex++
+				CompleteBibInfoNextRefIndex++
 			}
 		case reflect.TypeOf(&BlockRef{}):
 			RefBlocks = append(RefBlocks, tree.Value.(*BlockRef))
@@ -372,8 +373,8 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 				panic(nil)
 			}
 			tabs := tree.Parent.Value.(*BlockTabs)
-			tabs_tab := tree.Value.(*BlockTabsTab)
-			tabs.Tabs = append(tabs.Tabs, tabs_tab)
+			tabsTab := tree.Value.(*BlockTabsTab)
+			tabs.Tabs = append(tabs.Tabs, tabsTab)
 		case reflect.TypeOf(&BlockTabs{}):
 			tabs := tree.Value.(*BlockTabs)
 			TabsBlocks = append(TabsBlocks, tabs)
@@ -383,13 +384,13 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 			DFSNodeParse(tree.Children[i])
 		}
 	}
-	DFSNodeParse(current_block)
+	DFSNodeParse(currentBlock)
 
 	// Convert references
 	for i := 0; i < len(RefBlocks); i++ {
 		var entry BibliographyEntry
 		var ok bool
-		if entry, ok = CompleteBibinfo[RefBlocks[i].RawContent]; !ok {
+		if entry, ok = CompleteBibInfo[RefBlocks[i].RawContent]; !ok {
 			log.Warnf("Reference to \"%v\" cannot be resolved (will be rendered as \"[?]\")", RefBlocks[i].RawContent)
 			continue
 		}
@@ -400,9 +401,9 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 	}
 
 	// Generate bibliographies
-	bibliography_html_text := GenerateBibliography(CompleteBibinfo)
+	bibliographyHtmlText := GenerateBibliography(CompleteBibInfo)
 	for i := 0; i < len(BibliographyBlocks); i++ {
-		BibliographyBlocks[i].HTMLContent = &bibliography_html_text
+		BibliographyBlocks[i].HTMLContent = &bibliographyHtmlText
 	}
 
 	// Set selected tabs
@@ -417,7 +418,7 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 		TabsBlocks[i].Tabs[TabsBlocks[i].SelectedIndex].IsSelected = true
 	}
 
-	return *current_block, md_meta
+	return *currentBlock, mdMeta
 }
 
 // =====================================
@@ -426,18 +427,18 @@ func (file FileStruct) MDParse() (Tree[BlockInterface], MDMetaStructure) {
 type BibliographyEntryType uint8
 
 const (
-	BibliographyEntryType_Article BibliographyEntryType = iota
-	BibliographyEntryType_Book
-	BibliographyEntryType_Other
+	BibliographyEntryTypeArticle BibliographyEntryType = iota
+	BibliographyEntryTypeBook
+	BibliographyEntryTypeOther
 )
 
 func (t BibliographyEntryType) String() string {
 	switch t {
-	case BibliographyEntryType_Article:
+	case BibliographyEntryTypeArticle:
 		return "Article"
-	case BibliographyEntryType_Book:
+	case BibliographyEntryTypeBook:
 		return "Book"
-	case BibliographyEntryType_Other:
+	case BibliographyEntryTypeOther:
 		return "Other"
 	default:
 		panic(nil) // This should never be reached
@@ -492,7 +493,7 @@ func (f BibliographyEntryFields) String() string {
 }
 
 type BibliographyEntry struct {
-	ParentBlock    *BlockMetaBibinfo
+	ParentBlock    *BlockMetaBibInfo
 	Type           BibliographyEntryType
 	Fields         BibliographyEntryFields
 	ReferenceIndex int
@@ -509,138 +510,138 @@ func (e BibliographyEntry) String() string {
 	)
 }
 
-func ParseBibinfo(b *BlockMetaBibinfo) map[string]BibliographyEntry {
+func ParseBibInfo(b *BlockMetaBibInfo) map[string]BibliographyEntry {
 	entries := make(map[string]BibliographyEntry)
-	bibinfo_type_str := ""
+	bibInfoTypeStr := ""
 
 	// Types - don't call reflect.TypeOf multiple times!
-	reflect_type_string := reflect.TypeOf("a")
-	reflect_type_map_string_interface := reflect.TypeOf(make(map[string]interface{}))
-	reflect_type_slice_interface := reflect.TypeOf(make([]interface{}, 0))
+	reflectTypeString := reflect.TypeOf("a")
+	reflectTypeMapStringInterface := reflect.TypeOf(make(map[string]interface{}))
+	reflectTypeSliceInterface := reflect.TypeOf(make([]interface{}, 0))
 
-	var json_sb []byte
+	var jsonSb []byte
 	if b.JSONInline {
-		bibinfo_type_str = "inline bibinfo \"" + b.RawContent + "\""
-		json_sb = []byte(b.RawContent)
+		bibInfoTypeStr = "inline bibinfo \"" + b.RawContent + "\""
+		jsonSb = []byte(b.RawContent)
 	} else {
-		bibinfo_type_str = "bibinfo file (" + b.RawContent + ")"
+		bibInfoTypeStr = "bibinfo file (" + b.RawContent + ")"
 		var err error
-		json_sb, err = os.ReadFile(b.RawContent)
+		jsonSb, err = os.ReadFile(b.RawContent)
 		if err != nil {
-			log.Errorf("Could not read %v. Skipping nil...", bibinfo_type_str)
+			log.Errorf("Could not read %v. Skipping nil...", bibInfoTypeStr)
 			return nil
 		}
 	}
 
 	// Unmarshall the JSON
-	var full_json_interface interface{}
-	err := json.Unmarshal(json_sb, &full_json_interface)
+	var fullJsonInterface interface{}
+	err := json.Unmarshal(jsonSb, &fullJsonInterface)
 	if err != nil {
-		log.Errorf("Could not unmarshal %v. Skipping nil...", bibinfo_type_str)
+		log.Errorf("Could not unmarshal %v. Skipping nil...", bibInfoTypeStr)
 		return nil
 	}
-	full_json := full_json_interface.(map[string]interface{})
+	fullJson := fullJsonInterface.(map[string]interface{})
 
 	// Search for "bibliography"
-	if _, ok := (full_json["bibliography"]); !ok {
-		log.Warnf("Could not find \"bibliography\" entry in %v. Skipping empty...", bibinfo_type_str)
+	if _, ok := fullJson["bibliography"]; !ok {
+		log.Warnf("Could not find \"bibliography\" entry in %v. Skipping empty...", bibInfoTypeStr)
 		return entries
 	}
-	if reflect.TypeOf(full_json["bibliography"]) != reflect_type_slice_interface {
-		log.Warnf("The \"bibliography\" in %v is NOT an array. Skipping empty...", bibinfo_type_str)
+	if reflect.TypeOf(fullJson["bibliography"]) != reflectTypeSliceInterface {
+		log.Warnf("The \"bibliography\" in %v is NOT an array. Skipping empty...", bibInfoTypeStr)
 		return entries
 	}
-	bibliography_json := full_json["bibliography"].([]interface{})
+	bibliographyJson := fullJson["bibliography"].([]interface{})
 
 	// Search for entries
-	if len(bibliography_json) == 0 {
-		log.Warnf("The \"bibliography\" in %v is empty.", bibinfo_type_str)
+	if len(bibliographyJson) == 0 {
+		log.Warnf("The \"bibliography\" in %v is empty.", bibInfoTypeStr)
 		return entries
 	}
-	for entry_i := 0; entry_i < len(bibliography_json); entry_i++ {
-		if reflect.TypeOf(bibliography_json[entry_i]) != reflect_type_map_string_interface {
-			log.Warnf("\"bibliography\" entry %v in %v will be ignored (not a valid map[string]...)", entry_i, bibinfo_type_str)
+	for entryI := 0; entryI < len(bibliographyJson); entryI++ {
+		if reflect.TypeOf(bibliographyJson[entryI]) != reflectTypeMapStringInterface {
+			log.Warnf("\"bibliography\" entry %v in %v will be ignored (not a valid map[string]...)", entryI, bibInfoTypeStr)
 			continue
 		}
-		bibliography_entry := bibliography_json[entry_i].(map[string]interface{})
+		bibliographyEntry := bibliographyJson[entryI].(map[string]interface{})
 
 		var entry BibliographyEntry
 		entry.ParentBlock = b
 
-		entry_tag := ""
-		if bibliography_entry_tag, ok := (bibliography_entry["tag"]); !ok {
-			log.Warnf("\"bibliography\" entry %v in %v will be ignored (missing tag)", entry_i, bibinfo_type_str)
+		entryTag := ""
+		if bibliographyEntryTag, ok := bibliographyEntry["tag"]; !ok {
+			log.Warnf("\"bibliography\" entry %v in %v will be ignored (missing tag)", entryI, bibInfoTypeStr)
 			continue
-		} else if reflect.TypeOf(bibliography_entry_tag) != reflect_type_string {
-			log.Warnf("\"bibliography\" entry %v in %v will be ignored (tag exists, but is not a string)", entry_i, bibinfo_type_str)
+		} else if reflect.TypeOf(bibliographyEntryTag) != reflectTypeString {
+			log.Warnf("\"bibliography\" entry %v in %v will be ignored (tag exists, but is not a string)", entryI, bibInfoTypeStr)
 			continue
 		} else {
-			entry_tag = bibliography_entry_tag.(string)
+			entryTag = bibliographyEntryTag.(string)
 		}
 
-		entry_type := ""
-		entry.Type = BibliographyEntryType_Other
-		if bibliography_entry_type, ok := (bibliography_entry["type"]); !ok {
-			log.Warnf("Missing \"bibliography\" entry type in entry %v, %v. Considering type \"other\"...", entry_i, bibinfo_type_str)
-		} else if reflect.TypeOf(bibliography_entry_type) != reflect_type_string {
-			log.Warnf("\"bibliography\" entry type is not a string in entry %v, %v. Considering type \"other\"...", entry_i, bibinfo_type_str)
+		entryType := ""
+		entry.Type = BibliographyEntryTypeOther
+		if bibliographyEntryType, ok := bibliographyEntry["type"]; !ok {
+			log.Warnf("Missing \"bibliography\" entry type in entry %v, %v. Considering type \"other\"...", entryI, bibInfoTypeStr)
+		} else if reflect.TypeOf(bibliographyEntryType) != reflectTypeString {
+			log.Warnf("\"bibliography\" entry type is not a string in entry %v, %v. Considering type \"other\"...", entryI, bibInfoTypeStr)
 		} else {
-			entry_type = bibliography_entry_type.(string)
-			switch entry_type {
+			entryType = bibliographyEntryType.(string)
+			switch entryType {
 			case "article", "Article":
-				entry.Type = BibliographyEntryType_Article
+				entry.Type = BibliographyEntryTypeArticle
 			case "book", "Book":
-				entry.Type = BibliographyEntryType_Book
+				entry.Type = BibliographyEntryTypeBook
 			case "other", "Other", "unknown", "Unknown":
 			default:
-				log.Warnf("Unrecognized \"bibliography\" entry type \"%v\" in entry %v, %v. Considering type \"other\"...", entry_type, entry_i, bibinfo_type_str)
+				log.Warnf("Unrecognized \"bibliography\" entry type \"%v\" in entry %v, %v. Considering type \"other\"...", entryType, entryI, bibInfoTypeStr)
 			}
 		}
 
-		if bibliography_entry_data, ok := (bibliography_entry["data"]); ok && reflect.TypeOf(bibliography_entry_data) != reflect_type_map_string_interface {
-			log.Warnf("\"bibliography\" entry %v's \"data\" in %v will be ignored (not valid map[string]...)", entry_i, bibinfo_type_str)
+		if bibliographyEntryData, ok := bibliographyEntry["data"]; ok && reflect.TypeOf(bibliographyEntryData) != reflectTypeMapStringInterface {
+			log.Warnf("\"bibliography\" entry %v's \"data\" in %v will be ignored (not valid map[string]...)", entryI, bibInfoTypeStr)
 		} else if ok {
-			entry_data := bibliography_entry_data.(map[string]interface{})
-			for entry_data_key, entry_data_value := range entry_data {
-				if reflect.TypeOf(entry_data_value) != reflect_type_string {
-					log.Warnf("\"bibliography\" entry data value must be string in entry %v, %v. Ignoring only data key %v...", entry_i, bibinfo_type_str, entry_data_key)
+			entryData := bibliographyEntryData.(map[string]interface{})
+			for entryDataKey, entryDataValue := range entryData {
+				if reflect.TypeOf(entryDataValue) != reflectTypeString {
+					log.Warnf("\"bibliography\" entry data value must be string in entry %v, %v. Ignoring only data key %v...", entryI, bibInfoTypeStr, entryDataKey)
 					continue
 				}
-				data_value := entry_data_value.(string)
-				switch entry_data_key {
+				dataValue := entryDataValue.(string)
+				switch entryDataKey {
 				case "title":
 					entry.Fields.Title = new(string)
-					*entry.Fields.Title = data_value
+					*entry.Fields.Title = dataValue
 				case "author":
 					entry.Fields.Author = new(string)
-					*entry.Fields.Author = data_value
+					*entry.Fields.Author = dataValue
 				case "journal":
 					entry.Fields.Journal = new(string)
-					*entry.Fields.Journal = data_value
+					*entry.Fields.Journal = dataValue
 				case "volume":
 					entry.Fields.Volume = new(string)
-					*entry.Fields.Volume = data_value
+					*entry.Fields.Volume = dataValue
 				case "number":
 					entry.Fields.Number = new(string)
-					*entry.Fields.Number = data_value
+					*entry.Fields.Number = dataValue
 				case "pages":
 					entry.Fields.Pages = new(string)
-					*entry.Fields.Pages = data_value
+					*entry.Fields.Pages = dataValue
 				case "year":
 					entry.Fields.Year = new(string)
-					*entry.Fields.Year = data_value
+					*entry.Fields.Year = dataValue
 				case "publisher":
 					entry.Fields.Publisher = new(string)
-					*entry.Fields.Publisher = data_value
+					*entry.Fields.Publisher = dataValue
 				case "url":
 					entry.Fields.URL = new(string)
-					*entry.Fields.URL = data_value
+					*entry.Fields.URL = dataValue
 				default:
-					log.Warnf("Unrecognized \"bibliography\" entry data key \"%v\" in entry %v, %v. Ignoring only that data key...", entry_data_key, entry_i, bibinfo_type_str)
+					log.Warnf("Unrecognized \"bibliography\" entry data key \"%v\" in entry %v, %v. Ignoring only that data key...", entryDataKey, entryI, bibInfoTypeStr)
 				}
 			}
 		}
-		entries[entry_tag] = entry
+		entries[entryTag] = entry
 	}
 	return entries
 }
@@ -648,12 +649,12 @@ func ParseBibinfo(b *BlockMetaBibinfo) map[string]BibliographyEntry {
 func GenerateBibliography(mp map[string]BibliographyEntry) string {
 	var sb strings.Builder
 	sb.WriteString("<div class=\"bibliography\">\n")
-	ordered_bibinfo := make([]string, 0)
+	orderedBibInfo := make([]string, 0)
 	for k := range mp {
-		ordered_bibinfo = append(ordered_bibinfo, k)
+		orderedBibInfo = append(orderedBibInfo, k)
 	}
-	sort.Strings(ordered_bibinfo)
-	for _, key := range ordered_bibinfo {
+	sort.Strings(orderedBibInfo)
+	for _, key := range orderedBibInfo {
 		value := mp[key]
 		sb.WriteString("<div class=\"bib-entry\" id=\"ref-")
 		sb.WriteString(strconv.Itoa(value.ReferenceIndex))
@@ -724,181 +725,196 @@ func ParagraphInsertRawHelper(tree *Tree[BlockInterface], s *string) {
 	}
 }
 
-func ParseSingleParagraph(tree *Tree[BlockInterface], file FileStruct) {
-	// Insert links
-	link_parsed_tree := ParseSingleParagraphLinks(tree, file)
-	// Insert emphasis
-	emphasis_parsed_tree := ParseSingleBlockInlineEmphasis(link_parsed_tree)
-	// Cleanup
-	cleaned_tree := CleanupSingleBlockInline(emphasis_parsed_tree)
-
-	// Convert heading-paragraph -> normal heading
-	//         textbox title-paragraph into normal textbox title
-	tree.Children = []*Tree[BlockInterface]{cleaned_tree}
-	cleaned_tree.Parent = tree
-	if tree.Parent != nil && (reflect.TypeOf(tree.Parent.Value) == reflect.TypeOf(&BlockHeading{}) || reflect.TypeOf(tree.Parent.Value) == reflect.TypeOf(&BlockTextboxTitle{})) {
-		h := tree.Parent
-		cleaned_tree.Parent = h
-		h.Children = []*Tree[BlockInterface]{cleaned_tree}
+func ParagraphInsertRawHelperBuilder(tree *Tree[BlockInterface], sb *strings.Builder) {
+	if sb.Len() > 0 {
+		tree.Children = append(tree.Children,
+			&Tree[BlockInterface]{
+				Parent: tree,
+				Value: &BlockInline{
+					Content: &InlineRawString{
+						Content: sb.String(),
+					},
+				},
+			})
+		sb.Reset()
 	}
 }
 
-func CleanupSingleBlockInline(content_tree *Tree[BlockInterface]) *Tree[BlockInterface] {
-	cleaned_content_tree := &Tree[BlockInterface]{
-		Parent: content_tree.Parent,
+func ParseSingleParagraph(tree *Tree[BlockInterface], file *FileStruct) {
+	// Insert links
+	linkParsedTree := ParseSingleParagraphLinks(tree, file)
+	// Insert emphasis
+	emphasisParsedTree := ParseSingleBlockInlineEmphasis(linkParsedTree)
+	// Cleanup
+	cleanedTree := CleanupSingleBlockInline(emphasisParsedTree)
+
+	// Convert:        heading-paragraph -> normal heading
+	//          text box title-paragraph -> normal text box title
+	tree.Children = []*Tree[BlockInterface]{cleanedTree}
+	cleanedTree.Parent = tree
+	if tree.Parent != nil && (reflect.TypeOf(tree.Parent.Value) == reflect.TypeOf(&BlockHeading{}) || reflect.TypeOf(tree.Parent.Value) == reflect.TypeOf(&BlockTextBoxTitle{})) {
+		h := tree.Parent
+		cleanedTree.Parent = h
+		h.Children = []*Tree[BlockInterface]{cleanedTree}
+	}
+}
+
+func CleanupSingleBlockInline(contentTree *Tree[BlockInterface]) *Tree[BlockInterface] {
+	cleanedContentTree := &Tree[BlockInterface]{
+		Parent: contentTree.Parent,
 		Value: &BlockInline{
 			Content: &InlineDocument{},
 		},
 	}
-	for i := 0; i < len(content_tree.Children); i++ {
-		var sr string = ""
+	for i := 0; i < len(contentTree.Children); i++ {
+		var srb strings.Builder
 		j := i
 	digging:
-		for ; j < len(content_tree.Children); j++ {
-			if reflect.TypeOf(content_tree.Children[j].Value) != reflect.TypeOf(&BlockInline{}) {
+		for ; j < len(contentTree.Children); j++ {
+			if reflect.TypeOf(contentTree.Children[j].Value) != reflect.TypeOf(&BlockInline{}) {
 				break
 			}
-			bjc := content_tree.Children[j].Value.(*BlockInline).Content
+			bjc := contentTree.Children[j].Value.(*BlockInline).Content
 			switch reflect.TypeOf(bjc) {
 			case reflect.TypeOf(&InlineStringDelimiter{}):
 				switch bjc.(*InlineStringDelimiter).TypeOfDelimiter {
-				case UnderlineDelimiter:
-					sr += "_"
-				case AsteriskDelimiter:
-					sr += "*"
-				case TildeDelimiter:
-					sr += "~"
-				case OpenBracketDelimiter:
-					sr += "["
-				case CloseBracketDelimiter:
-					sr += "]"
-				case OpenParantDelimiter:
-					sr += "("
-				case CloseParantDelimiter:
-					sr += ")" // Might never be reached
+				case InlineDelimiterTypeUnderlineDelimiter:
+					srb.WriteRune('_')
+				case InlineDelimiterTypeAsteriskDelimiter:
+					srb.WriteRune('*')
+				case InlineDelimiterTypeTildeDelimiter:
+					srb.WriteRune('~')
+				case InlineDelimiterTypeOpenBracketDelimiter:
+					srb.WriteRune('[')
+				case InlineDelimiterTypeCloseBracketDelimiter:
+					srb.WriteRune(']')
+				case InlineDelimiterTypeOpenParenthesesDelimiter:
+					srb.WriteRune('(')
+				case InlineDelimiterTypeCloseParenthesesDelimiter:
+					srb.WriteRune(')') // Might never be reached
 				default:
 					panic(nil) // This should never be reached
 				}
 			case reflect.TypeOf(&InlineRawString{}):
-				sr += bjc.(*InlineRawString).Content
+				srb.WriteString(bjc.(*InlineRawString).Content)
 			default:
 				break digging
 			}
 		}
 		if j != i {
-			cleaned_content_tree.Children = append(
-				cleaned_content_tree.Children,
+			cleanedContentTree.Children = append(
+				cleanedContentTree.Children,
 				&Tree[BlockInterface]{
-					Parent: cleaned_content_tree,
+					Parent: cleanedContentTree,
 					Value: &BlockInline{
 						Content: &InlineRawString{
-							Content: sr,
+							Content: srb.String(),
 						},
 					},
 				},
 			)
 		}
-		if j < len(content_tree.Children) {
-			content_tree.Children[j].Parent = cleaned_content_tree
-			cleaned_content_tree.Children = append(
-				cleaned_content_tree.Children,
-				content_tree.Children[j],
+		if j < len(contentTree.Children) {
+			contentTree.Children[j].Parent = cleanedContentTree
+			cleanedContentTree.Children = append(
+				cleanedContentTree.Children,
+				contentTree.Children[j],
 			)
 		}
 		i = j
 	}
 
-	return cleaned_content_tree
+	return cleanedContentTree
 }
 
 func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInterface] {
-	content_tree := &Tree[BlockInterface]{
+	contentTree := &Tree[BlockInterface]{
 		Parent: tree,
 		Value: &BlockInline{
 			Content: &InlineDocument{},
 		},
 	}
 
-	var delimiter_stack Stack[InlineDelimiter]
-	current_string := ""
-	for child_i := 0; ; child_i++ {
-		if child_i == len(tree.Children) {
-			ParagraphInsertRawHelper(content_tree, &current_string)
+	var delimiterStack Stack[InlineDelimiter]
+	currentString := ""
+	for childI := 0; ; childI++ {
+		if childI == len(tree.Children) {
+			ParagraphInsertRawHelper(contentTree, &currentString)
 			break
 		}
-		tree_child := tree.Children[child_i]
+		treeChild := tree.Children[childI]
 
 		// Only work with raw strings
-		is_raw := false
-		is_href := false
-		if reflect.TypeOf(tree_child.Value) == reflect.TypeOf(&BlockInline{}) {
-			bic := tree_child.Value.(*BlockInline).Content
+		isRaw := false
+		isHref := false
+		if reflect.TypeOf(treeChild.Value) == reflect.TypeOf(&BlockInline{}) {
+			bic := treeChild.Value.(*BlockInline).Content
 			switch reflect.TypeOf(bic) {
 			case reflect.TypeOf(&InlineRawString{}):
-				is_raw = true
+				isRaw = true
 			case reflect.TypeOf(&InlineHref{}):
-				is_href = true
+				isHref = true
 			}
 		}
 
-		if !is_raw {
-			ParagraphInsertRawHelper(content_tree, &current_string)
-			tree_child.Parent = content_tree
-			if is_href {
-				aux := ParseSingleBlockInlineEmphasis(tree_child)
+		if !isRaw {
+			ParagraphInsertRawHelper(contentTree, &currentString)
+			treeChild.Parent = contentTree
+			if isHref {
+				aux := ParseSingleBlockInlineEmphasis(treeChild)
 				for i := 0; i < len(aux.Children); i++ {
-					aux.Children[i].Parent = tree_child
+					aux.Children[i].Parent = treeChild
 				}
-				tree_child.Children = aux.Children
+				treeChild.Children = aux.Children
 			}
-			content_tree.Children = append(content_tree.Children, tree_child)
+			contentTree.Children = append(contentTree.Children, treeChild)
 		} else {
-			parsing_now := []rune(tree_child.Value.(*BlockInline).Content.(*InlineRawString).Content)
-			is_escaped := false
-			for c_i := 0; c_i < len(parsing_now); c_i++ {
-				c := parsing_now[c_i]
-				if is_escaped {
+			parsingNow := []rune(treeChild.Value.(*BlockInline).Content.(*InlineRawString).Content)
+			isEscaped := false
+			for cI := 0; cI < len(parsingNow); cI++ {
+				c := parsingNow[cI]
+				if isEscaped {
 					switch c {
 					case '_', '*', '|', '~', '<', '>', '\\':
-						current_string += string(c)
+						currentString += string(c)
 					default:
 						log.Warnf(
 							"Unrecognized escape sequence \"\\%v\". Please use \"\\\\%v\" instead. The sequence will be treated as \"\\\\%v\"...",
 							c, c, c,
 						)
-						current_string += "\\" + string(c)
+						currentString += "\\" + string(c)
 					}
-					is_escaped = false
+					isEscaped = false
 				} else {
 					switch c {
 					case '_', '*', '~':
-						ParagraphInsertRawHelper(content_tree, &current_string)
-						delim_count := 0
-						for parsing_now[c_i] == c {
-							delim_count++
-							c_i++
-							if c_i >= len(parsing_now) {
+						ParagraphInsertRawHelper(contentTree, &currentString)
+						delimCount := 0
+						for parsingNow[cI] == c {
+							delimCount++
+							cI++
+							if cI >= len(parsingNow) {
 								break
 							}
 						}
-						c_i--
+						cI--
 						var tt InlineDelimiterType
 						switch c {
 						case '_':
-							tt = UnderlineDelimiter
+							tt = InlineDelimiterTypeUnderlineDelimiter
 						case '*':
-							tt = AsteriskDelimiter
+							tt = InlineDelimiterTypeAsteriskDelimiter
 						case '~':
-							tt = TildeDelimiter
+							tt = InlineDelimiterTypeTildeDelimiter
 						}
-						for top := delimiter_stack.Top(); top != nil && top.Type == tt && delim_count > 0; top = delimiter_stack.Top() {
-							to_extract := 1
-							if top.Count >= 2 && delim_count >= 2 {
-								to_extract = 2
+						for top := delimiterStack.Top(); top != nil && top.Type == tt && delimCount > 0; top = delimiterStack.Top() {
+							toExtract := 1
+							if top.Count >= 2 && delimCount >= 2 {
+								toExtract = 2
 							}
-							i := len(content_tree.Children) - 1
+							i := len(contentTree.Children) - 1
 							for ; i >= 0; i-- {
-								ctc := content_tree.Children[i].Value
+								ctc := contentTree.Children[i].Value
 								if reflect.TypeOf(ctc) != reflect.TypeOf(&BlockInline{}) {
 									continue
 								}
@@ -917,45 +933,45 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 							}
 							// Create string modifier
 							mod := new(InlineStringModifier)
-							if tt == TildeDelimiter {
-								mod.TypeOfModifier = StrikeoutText
-							} else if to_extract == 2 {
-								mod.TypeOfModifier = BoldText
+							if tt == InlineDelimiterTypeTildeDelimiter {
+								mod.TypeOfModifier = InlineStringModifierTypeStrikeoutText
+							} else if toExtract == 2 {
+								mod.TypeOfModifier = InlineStringModifierTypeBoldText
 							} else {
-								mod.TypeOfModifier = ItalicText
+								mod.TypeOfModifier = InlineStringModifierTypeItalicText
 							}
-							mod_tree := &Tree[BlockInterface]{
-								Parent: content_tree,
+							modTree := &Tree[BlockInterface]{
+								Parent: contentTree,
 								Value: &BlockInline{
 									Content: mod,
 								},
-								Children: make([]*Tree[BlockInterface], len(content_tree.Children)-(i+1)),
+								Children: make([]*Tree[BlockInterface], len(contentTree.Children)-(i+1)),
 							}
-							for j := 0; j < len(mod_tree.Children); j++ {
-								mod_tree.Children[j] = content_tree.Children[j+i+1]
-								mod_tree.Children[j].Parent = mod_tree
+							for j := 0; j < len(modTree.Children); j++ {
+								modTree.Children[j] = contentTree.Children[j+i+1]
+								modTree.Children[j].Parent = modTree
 							}
 							// Remove temp delimiters
-							content_tree.Children = content_tree.Children[:i-(to_extract-1)]
+							contentTree.Children = contentTree.Children[:i-(toExtract-1)]
 							// Insert string modifier
-							content_tree.Children = append(content_tree.Children, mod_tree)
+							contentTree.Children = append(contentTree.Children, modTree)
 
-							delim_count -= to_extract
-							top.Count -= to_extract
+							delimCount -= toExtract
+							top.Count -= toExtract
 							if top.Count == 0 {
-								delimiter_stack.Pop()
+								delimiterStack.Pop()
 							}
 						}
-						if delim_count > 0 {
-							delimiter_stack.Push(InlineDelimiter{
+						if delimCount > 0 {
+							delimiterStack.Push(InlineDelimiter{
 								Type:  tt,
-								Count: delim_count,
+								Count: delimCount,
 							})
-							for ; delim_count > 0; delim_count-- {
-								content_tree.Children = append(
-									content_tree.Children,
+							for ; delimCount > 0; delimCount-- {
+								contentTree.Children = append(
+									contentTree.Children,
 									&Tree[BlockInterface]{
-										Parent: content_tree,
+										Parent: contentTree,
 										Value: &BlockInline{
 											Content: &InlineStringDelimiter{
 												TypeOfDelimiter: tt,
@@ -965,65 +981,67 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 							}
 						}
 					case '\\':
-						is_escaped = true
+						isEscaped = true
 					default:
-						current_string += string(c)
+						currentString += string(c)
 					}
 				}
 			}
 		}
 	}
 
-	return content_tree
+	return contentTree
 }
 
 const (
-	PDM_LinkState_Start                = 1
-	PDM_LinkState_Text_Last_Sq_Bracket = 2
-	PDM_LinkState_Text_Last_Space      = 3
-	PDM_LinkState_Link                 = 4
+	PDMLinkStateStart             = 1
+	PDMLinkStateTextLastSqBracket = 2
+	PDMLinkStateTextLastSpace     = 3
+	PDMLinkStateLink              = 4
 )
 
-type PDM_LinkState_Char int
+type PDMLinkStateChar int
 
 const (
-	PDM_LinkState_Char_Bracket PDM_LinkState_Char = iota
-	PDM_LinkState_Char_Parant
+	PDMLinkStateCharBracket PDMLinkStateChar = iota
+	PDMLinkStateCharParenthesis
 )
 
-func (c PDM_LinkState_Char) String() string {
+func (c PDMLinkStateChar) String() string {
 	switch c {
-	case PDM_LinkState_Char_Bracket:
+	case PDMLinkStateCharBracket:
 		return "["
-	case PDM_LinkState_Char_Parant:
+	case PDMLinkStateCharParenthesis:
 		return "]"
 	default:
 		panic(nil) // This should never be reached
 	}
 }
 
-func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tree[BlockInterface] {
+func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file *FileStruct) *Tree[BlockInterface] {
 	p := tree.Value.(*BlockParagraph)
 
-	content_tree := &Tree[BlockInterface]{
+	contentTree := &Tree[BlockInterface]{
 		Parent: tree,
 		Value: &BlockInline{
 			Content: &InlineDocument{},
 		},
 	}
 
-	current_string := ""
-	is_escaped := false
+	var currentStringBuilder strings.Builder
+	var currentStringLastChar rune
+	isEscaped := false
 
-	PDM_State := PDM_LinkState_Start
-	var PDM_Stack Stack[Pair[PDM_LinkState_Char, int]]
-	PDM_text_begin := -1
+	PdmState := PDMLinkStateStart
+	var PdmStack Stack[Pair[PDMLinkStateChar, int]]
+	PdmTextBegin := -1
 
-	for current, expected_child_i := (Pair[int, int]{i: p.ContentStart.i, j: p.ContentStart.j - 1}), 0; ; {
+	for current, expectedChildI := (Pair[int, int]{i: p.ContentStart.i, j: p.ContentStart.j - 1}), 0; ; {
 		current.j++
 		if current.j >= len(file.Lines[current.i].RuneContent) {
-			if current_string != "" && current_string[len(current_string)-1] != ' ' {
-				current_string += " "
+			if currentStringBuilder.Len() > 0 && currentStringLastChar != ' ' {
+				currentStringBuilder.WriteRune(' ')
+				currentStringLastChar = ' '
 			}
 			current.j = 0
 			for current.i++; current.i < len(file.Lines) && file.Lines[current.i].Empty(); {
@@ -1031,158 +1049,159 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 			}
 		}
 		if current.i > p.ContentEnd.i || (current.i == p.ContentEnd.i && current.j >= p.ContentEnd.j) {
-			ParagraphInsertRawHelper(content_tree, &current_string)
+			ParagraphInsertRawHelperBuilder(contentTree, &currentStringBuilder)
 			break
 		}
 
-		is_part_of_other_child := false
-		if expected_child_i < len(tree.Children) {
-			cbs := tree.Children[expected_child_i].Value.GetBlockStruct()
+		isPartOfOtherChild := false
+		if expectedChildI < len(tree.Children) {
+			cbs := tree.Children[expectedChildI].Value.GetBlockStruct()
 			if current.i == cbs.Start.i && current.j == cbs.Start.j {
-				is_part_of_other_child = true
+				isPartOfOtherChild = true
 			}
 		}
 
-		if is_part_of_other_child {
-			ParagraphInsertRawHelper(content_tree, &current_string)
-			tree_child := tree.Children[expected_child_i]
-			tree_child.Parent = content_tree
-			content_tree.Children = append(content_tree.Children, tree_child)
-			current = tree.Children[expected_child_i].Value.GetBlockStruct().End
+		if isPartOfOtherChild {
+			ParagraphInsertRawHelperBuilder(contentTree, &currentStringBuilder)
+			treeChild := tree.Children[expectedChildI]
+			treeChild.Parent = contentTree
+			contentTree.Children = append(contentTree.Children, treeChild)
+			current = tree.Children[expectedChildI].Value.GetBlockStruct().End
 			current.j--
-			expected_child_i++
+			expectedChildI++
 
-			switch PDM_State {
-			case PDM_LinkState_Start, PDM_LinkState_Text_Last_Sq_Bracket, PDM_LinkState_Text_Last_Space:
-				PDM_State = PDM_LinkState_Text_Last_Space
-			case PDM_LinkState_Link:
-				PDM_State = PDM_LinkState_Start
-				PDM_Stack.Clear()
+			switch PdmState {
+			case PDMLinkStateStart, PDMLinkStateTextLastSqBracket, PDMLinkStateTextLastSpace:
+				PdmState = PDMLinkStateTextLastSpace
+			case PDMLinkStateLink:
+				PdmState = PDMLinkStateStart
+				PdmStack.Clear()
 			default:
 				panic(nil) // This should never be reached!
 			}
 		} else {
 			c := file.Lines[current.i].RuneContent[current.j]
-			if is_escaped {
+			currentStringLastChar = c
+			if isEscaped {
 				switch c {
 				case '_', '*', '|', '~', '<', '>', '\\':
-					current_string += string(c)
+					currentStringBuilder.WriteRune(c)
 				default:
 					log.Warnf(
 						"Unrecognized escape sequence \"\\%v\". Please use \"\\\\%v\" instead. The sequence will be treated as \"\\\\%v\"...",
 						c, c, c,
 					)
-					current_string += "\\" + string(c)
+					currentStringBuilder.WriteRune('\\')
+					currentStringBuilder.WriteRune(c)
 				}
-				is_escaped = false
+				isEscaped = false
 			} else {
 				switch c {
 				case '[':
-					switch PDM_State {
-					case PDM_LinkState_Start, PDM_LinkState_Text_Last_Sq_Bracket, PDM_LinkState_Text_Last_Space:
-						ParagraphInsertRawHelper(content_tree, &current_string)
-						content_tree.Children = append(
-							content_tree.Children,
+					switch PdmState {
+					case PDMLinkStateStart, PDMLinkStateTextLastSqBracket, PDMLinkStateTextLastSpace:
+						ParagraphInsertRawHelperBuilder(contentTree, &currentStringBuilder)
+						contentTree.Children = append(
+							contentTree.Children,
 							&Tree[BlockInterface]{
-								Parent: content_tree,
+								Parent: contentTree,
 								Value: &BlockInline{
 									Content: &InlineStringDelimiter{
-										TypeOfDelimiter: OpenBracketDelimiter,
+										TypeOfDelimiter: InlineDelimiterTypeOpenBracketDelimiter,
 									},
 								},
 							})
-						PDM_State = PDM_LinkState_Start
-						PDM_Stack.Push(Pair[PDM_LinkState_Char, int]{
-							i: PDM_LinkState_Char_Bracket,
-							j: len(content_tree.Children) - 1,
+						PdmState = PDMLinkStateStart
+						PdmStack.Push(Pair[PDMLinkStateChar, int]{
+							i: PDMLinkStateCharBracket,
+							j: len(contentTree.Children) - 1,
 						})
-					case PDM_LinkState_Link:
+					case PDMLinkStateLink:
 						// Do nothing
-						current_string += "["
+						currentStringBuilder.WriteRune('[')
 					default:
 						panic(nil) // This should never be reached!
 					}
 				case ']':
-					switch PDM_State {
-					case PDM_LinkState_Start, PDM_LinkState_Text_Last_Sq_Bracket, PDM_LinkState_Text_Last_Space:
-						ParagraphInsertRawHelper(content_tree, &current_string)
-						if !PDM_Stack.Empty() && PDM_Stack.Top().i == PDM_LinkState_Char_Bracket {
-							PDM_State = PDM_LinkState_Text_Last_Sq_Bracket
-							PDM_text_begin = PDM_Stack.Top().j
-							PDM_Stack.Pop()
+					switch PdmState {
+					case PDMLinkStateStart, PDMLinkStateTextLastSqBracket, PDMLinkStateTextLastSpace:
+						ParagraphInsertRawHelperBuilder(contentTree, &currentStringBuilder)
+						if !PdmStack.Empty() && PdmStack.Top().i == PDMLinkStateCharBracket {
+							PdmState = PDMLinkStateTextLastSqBracket
+							PdmTextBegin = PdmStack.Top().j
+							PdmStack.Pop()
 						} else {
-							PDM_State = PDM_LinkState_Start
-							PDM_Stack.Clear()
+							PdmState = PDMLinkStateStart
+							PdmStack.Clear()
 						}
-					case PDM_LinkState_Link:
+					case PDMLinkStateLink:
 						// Do nothing
 					default:
 						panic(nil) // This should never be reached!
 					}
-					current_string += "]"
+					currentStringBuilder.WriteRune(']')
 				case ' ':
-					switch PDM_State {
-					case PDM_LinkState_Start, PDM_LinkState_Text_Last_Sq_Bracket, PDM_LinkState_Text_Last_Space, PDM_LinkState_Link:
-						PDM_State = PDM_LinkState_Text_Last_Space
+					switch PdmState {
+					case PDMLinkStateStart, PDMLinkStateTextLastSqBracket, PDMLinkStateTextLastSpace, PDMLinkStateLink:
+						PdmState = PDMLinkStateTextLastSpace
 					default:
 						panic(nil) // This should never be reached!
 					}
-					current_string += " "
-
+					currentStringBuilder.WriteRune(' ')
 				case '(':
-					switch PDM_State {
-					case PDM_LinkState_Start, PDM_LinkState_Text_Last_Space:
-						PDM_State = PDM_LinkState_Text_Last_Space
-					case PDM_LinkState_Text_Last_Sq_Bracket, PDM_LinkState_Link:
-						PDM_State = PDM_LinkState_Link
-						PDM_Stack.Push(Pair[PDM_LinkState_Char, int]{
-							i: PDM_LinkState_Char_Parant,
+					switch PdmState {
+					case PDMLinkStateStart, PDMLinkStateTextLastSpace:
+						PdmState = PDMLinkStateTextLastSpace
+					case PDMLinkStateTextLastSqBracket, PDMLinkStateLink:
+						PdmState = PDMLinkStateLink
+						PdmStack.Push(Pair[PDMLinkStateChar, int]{
+							i: PDMLinkStateCharParenthesis,
 							j: 0, // unused
 						})
 					default:
 						panic(nil) // This should never be reached!
 					}
-					current_string += "("
+					currentStringBuilder.WriteRune(')')
 				case ')':
-					switch PDM_State {
-					case PDM_LinkState_Start, PDM_LinkState_Text_Last_Space, PDM_LinkState_Text_Last_Sq_Bracket:
-						PDM_State = PDM_LinkState_Text_Last_Space
-					case PDM_LinkState_Link:
-						if !PDM_Stack.Empty() && PDM_Stack.Top().i == PDM_LinkState_Char_Parant {
-							PDM_State = PDM_LinkState_Link
-							PDM_Stack.Pop()
+					switch PdmState {
+					case PDMLinkStateStart, PDMLinkStateTextLastSpace, PDMLinkStateTextLastSqBracket:
+						PdmState = PDMLinkStateTextLastSpace
+					case PDMLinkStateLink:
+						if !PdmStack.Empty() && PdmStack.Top().i == PDMLinkStateCharParenthesis {
+							PdmState = PDMLinkStateLink
+							PdmStack.Pop()
 						} else {
-							PDM_State = PDM_LinkState_Start
+							PdmState = PDMLinkStateStart
 						}
 					default:
 						panic(nil) // This should never be reached!
 					}
 
-					if (PDM_Stack.Empty() || PDM_Stack.Size() > 0 && PDM_Stack.Top().i != PDM_LinkState_Char_Parant) && PDM_State == PDM_LinkState_Link {
-						PDM_Stack.Clear()
+					if (PdmStack.Empty() || PdmStack.Size() > 0 && PdmStack.Top().i != PDMLinkStateCharParenthesis) && PdmState == PDMLinkStateLink {
+						PdmStack.Clear()
 
 						a := new(InlineHref)
-						a.Address = current_string[2:]
-						a_tree := &Tree[BlockInterface]{
-							Parent: content_tree,
+						a.Address = currentStringBuilder.String()[2:]
+						aTree := &Tree[BlockInterface]{
+							Parent: contentTree,
 							Value: &BlockInline{
 								Content: a,
 							},
-							Children: make([]*Tree[BlockInterface], len(content_tree.Children)-(PDM_text_begin+1)),
+							Children: make([]*Tree[BlockInterface], len(contentTree.Children)-(PdmTextBegin+1)),
 						}
-						for j := 0; j < len(a_tree.Children); j++ { // TODO - could use cleanup instead of this
-							was_inline_string_delimiter := false
-							if reflect.TypeOf(content_tree.Children[j+PDM_text_begin+1].Value) == reflect.TypeOf(&BlockInline{}) {
-								bic := content_tree.Children[j+PDM_text_begin+1].Value.(*BlockInline).Content
+						for j := 0; j < len(aTree.Children); j++ { // TODO - could use cleanup instead of this
+							wasInlineStringDelimiter := false
+							if reflect.TypeOf(contentTree.Children[j+PdmTextBegin+1].Value) == reflect.TypeOf(&BlockInline{}) {
+								bic := contentTree.Children[j+PdmTextBegin+1].Value.(*BlockInline).Content
 								if reflect.TypeOf(bic) == reflect.TypeOf(&InlineStringDelimiter{}) {
 									t := bic.(*InlineStringDelimiter).TypeOfDelimiter
 									// Sanity check
-									if t != OpenBracketDelimiter {
+									if t != InlineDelimiterTypeOpenBracketDelimiter {
 										panic(nil)
 									}
-									was_inline_string_delimiter = true
-									a_tree.Children[j] = &Tree[BlockInterface]{
-										Parent: content_tree,
+									wasInlineStringDelimiter = true
+									aTree.Children[j] = &Tree[BlockInterface]{
+										Parent: contentTree,
 										Value: &BlockInline{
 											Content: &InlineRawString{
 												Content: "[",
@@ -1192,35 +1211,34 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file FileStruct) *Tre
 									}
 								}
 							}
-							if !was_inline_string_delimiter {
-								a_tree.Children[j] = content_tree.Children[j+PDM_text_begin+1]
+							if !wasInlineStringDelimiter {
+								aTree.Children[j] = contentTree.Children[j+PdmTextBegin+1]
 							}
-							a_tree.Children[j].Parent = a_tree
+							aTree.Children[j].Parent = aTree
 						}
 						// Remove temp delimiters
-						content_tree.Children = content_tree.Children[:PDM_text_begin]
+						contentTree.Children = contentTree.Children[:PdmTextBegin]
 						// Insert string modifier
-						content_tree.Children = append(content_tree.Children, a_tree)
+						contentTree.Children = append(contentTree.Children, aTree)
 						// Clear current string
-						current_string = ""
-						PDM_State = PDM_LinkState_Start
+						currentStringBuilder.Reset()
+						PdmState = PDMLinkStateStart
 					} else {
-						current_string += ")"
+						currentStringBuilder.WriteRune(')')
 					}
 				default:
-					switch PDM_State {
-					case PDM_LinkState_Start, PDM_LinkState_Text_Last_Space, PDM_LinkState_Text_Last_Sq_Bracket:
-						PDM_State = PDM_LinkState_Text_Last_Space
-					case PDM_LinkState_Link:
-						PDM_State = PDM_LinkState_Link
+					switch PdmState {
+					case PDMLinkStateStart, PDMLinkStateTextLastSpace, PDMLinkStateTextLastSqBracket:
+						PdmState = PDMLinkStateTextLastSpace
+					case PDMLinkStateLink:
+						PdmState = PDMLinkStateLink
 					default:
 						panic(nil) // This should never be reached!
 					}
-					current_string += string(c)
+					currentStringBuilder.WriteRune(c)
 				}
 			}
 		}
 	}
-
-	return content_tree
+	return contentTree
 }

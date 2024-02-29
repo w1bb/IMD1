@@ -57,7 +57,7 @@ type FileStruct struct {
 	Lines []LineStruct
 }
 
-func (file FileStruct) String() string {
+func (file *FileStruct) String() string {
 	var aux string
 	for _, line := range file.Lines {
 		aux += "  " + line.String() + "\n"
@@ -90,7 +90,7 @@ func (file *FileStruct) ReadFile(filename string) {
 	file.ReadString(string(s))
 }
 
-func (file FileStruct) GetStringBetween(start Pair[int, int], end Pair[int, int]) string {
+func (file *FileStruct) GetStringBetween(start Pair[int, int], end Pair[int, int]) string {
 	if len(file.Lines) <= start.i {
 		return ""
 	}

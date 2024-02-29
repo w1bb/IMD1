@@ -94,35 +94,35 @@ func (b *BlockHeading) GenerateLaTeXTagSuffix() string {
 }
 
 // =====================================
-// Textbox LaTeX interface
+// TextBox LaTeX interface
 
-func (b *BlockTextbox) GenerateLaTeXTagPrefix() string {
+func (b *BlockTextBox) GenerateLaTeXTagPrefix() string {
 	return "{" // TODO
 }
 
-func (b *BlockTextbox) GenerateLaTeXTagSuffix() string {
+func (b *BlockTextBox) GenerateLaTeXTagSuffix() string {
 	return "}"
 }
 
 // =====================================
-// Textbox title LaTeX interface
+// TextBox title LaTeX interface
 
-func (b *BlockTextboxTitle) GenerateLaTeXTagPrefix() string {
+func (b *BlockTextBoxTitle) GenerateLaTeXTagPrefix() string {
 	return "{" // TODO
 }
 
-func (b *BlockTextboxTitle) GenerateLaTeXTagSuffix() string {
+func (b *BlockTextBoxTitle) GenerateLaTeXTagSuffix() string {
 	return "}"
 }
 
 // =====================================
-// Textbox content LaTeX interface
+// TextBox content LaTeX interface
 
-func (b *BlockTextboxContent) GenerateLaTeXTagPrefix() string {
+func (b *BlockTextBoxContent) GenerateLaTeXTagPrefix() string {
 	return "{" // TODO
 }
 
-func (b *BlockTextboxContent) GenerateLaTeXTagSuffix() string {
+func (b *BlockTextBoxContent) GenerateLaTeXTagSuffix() string {
 	return "}"
 }
 
@@ -187,13 +187,13 @@ func (b *BlockInlineCodeListing) GenerateLaTeXTagSuffix() string {
 func (b *BlockMath) GenerateLaTeXTagPrefix() string {
 	var s string
 	switch b.TypeOfBlock {
-	case DoubleDollar:
+	case BlockMathTypeDoubleDollar:
 		s = "$$"
-	case Brackets:
+	case BlockMathTypeBrackets:
 		s = "\\["
-	case BeginEquation:
-		s = "\\begin{eqaution}"
-	case BeginAlign:
+	case BlockMathTypeBeginEquation:
+		s = "\\begin{equation}"
+	case BlockMathTypeBeginAlign:
 		s = "\\begin{align}"
 	default:
 		panic(nil) // This should never be reached
@@ -203,13 +203,13 @@ func (b *BlockMath) GenerateLaTeXTagPrefix() string {
 
 func (b *BlockMath) GenerateLaTeXTagSuffix() string {
 	switch b.TypeOfBlock {
-	case DoubleDollar:
+	case BlockMathTypeDoubleDollar:
 		return "$$"
-	case Brackets:
+	case BlockMathTypeBrackets:
 		return "\\]\n"
-	case BeginEquation:
-		return "\\end{eqaution}\n"
-	case BeginAlign:
+	case BlockMathTypeBeginEquation:
+		return "\\end{equation}\n"
+	case BlockMathTypeBeginAlign:
 		return "\\end{align}\n"
 	default:
 		panic(nil) // This should never be reached
@@ -222,9 +222,9 @@ func (b *BlockMath) GenerateLaTeXTagSuffix() string {
 func (b *BlockInlineMath) GenerateLaTeXTagPrefix() string {
 	var s string
 	switch b.TypeOfBlock {
-	case SingleDollar:
+	case BlockInlineMathTypeSingleDollar:
 		s = "$"
-	case Parenthesis:
+	case BlockInlineMathTypeParenthesis:
 		s = "\\("
 	default:
 		panic(nil) // This should never be reached
@@ -234,9 +234,9 @@ func (b *BlockInlineMath) GenerateLaTeXTagPrefix() string {
 
 func (b *BlockInlineMath) GenerateLaTeXTagSuffix() string {
 	switch b.TypeOfBlock {
-	case SingleDollar:
+	case BlockInlineMathTypeSingleDollar:
 		return "$"
-	case Parenthesis:
+	case BlockInlineMathTypeParenthesis:
 		return "\\)"
 	default:
 		panic(nil) // This should never be reached
@@ -301,9 +301,9 @@ func (b *BlockFigure) GenerateLaTeXTagSuffix() string {
 }
 
 // =====================================
-// Subfigure LaTeX interface
+// SubFigure LaTeX interface
 
-func (b *BlockSubfigure) GenerateLaTeXTagPrefix() string {
+func (b *BlockSubFigure) GenerateLaTeXTagPrefix() string {
 	r := "\\begin{subfigure}\n" // TODO - specify width based on how many subfigures
 	r += fmt.Sprintf(
 		"\\includegraphics[width=\\textwidth]{%v}\n",
@@ -313,7 +313,7 @@ func (b *BlockSubfigure) GenerateLaTeXTagPrefix() string {
 	return r
 }
 
-func (b *BlockSubfigure) GenerateLaTeXTagSuffix() string {
+func (b *BlockSubFigure) GenerateLaTeXTagSuffix() string {
 	return "}\n\\end{subfigure}\n"
 }
 
@@ -414,11 +414,11 @@ func (b *InlineRawString) GenerateLaTeXTagSuffix() string {
 
 func (b *InlineStringModifier) GenerateLaTeXTagPrefix() string {
 	switch b.TypeOfModifier {
-	case ItalicText:
+	case InlineStringModifierTypeItalicText:
 		return "\\textit{"
-	case BoldText:
+	case InlineStringModifierTypeBoldText:
 		return "\\textbf{"
-	case StrikeoutText:
+	case InlineStringModifierTypeStrikeoutText:
 		return "\\sout{"
 	default:
 		panic(nil) // This should never be reached
@@ -492,11 +492,11 @@ func (b *BlockMetaCopyright) GenerateLaTeXTagSuffix() string {
 // =====================================
 // Meta (bibliography) LaTeX interfaces (ignore them)
 
-func (b *BlockMetaBibinfo) GenerateLaTeXTagPrefix() string {
+func (b *BlockMetaBibInfo) GenerateLaTeXTagPrefix() string {
 	return ""
 }
 
-func (b *BlockMetaBibinfo) GenerateLaTeXTagSuffix() string {
+func (b *BlockMetaBibInfo) GenerateLaTeXTagSuffix() string {
 	return ""
 }
 

@@ -21,7 +21,8 @@ def run_test_IMD1():
     # TODO - create tests
     def run_test_md_to_html_1(imd1):
         imd1.reset()
-        imd1.md_to_html("")
+        imd1.to_html("Hello world")
+        print(imd1.html)
         return True
 
     # Run the tests
