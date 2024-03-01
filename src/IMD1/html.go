@@ -228,8 +228,12 @@ func (b *BlockMath) GenerateHTMLTagPrefix() string {
 		s = "\\["
 	case BlockMathTypeBeginEquation:
 		s = "\\begin{equation}"
+	case BlockMathTypeBeginEquationStar:
+		s = "\\begin{equation*}"
 	case BlockMathTypeBeginAlign:
 		s = "\\begin{align}"
+	case BlockMathTypeBeginAlignStar:
+		s = "\\begin{align*}"
 	default:
 		panic(nil) // This should never be reached
 	}
@@ -242,8 +246,12 @@ func (b *BlockMath) GenerateHTMLTagSuffix() string {
 		return "\\]\n"
 	case BlockMathTypeBeginEquation:
 		return "\\end{equation}\n"
+	case BlockMathTypeBeginEquationStar:
+		return "\\end{equation*}\n"
 	case BlockMathTypeBeginAlign:
 		return "\\end{align}\n"
+	case BlockMathTypeBeginAlignStar:
+		return "\\end{align*}\n"
 	default:
 		panic(nil) // This should never be reached
 	}
@@ -368,11 +376,15 @@ func (b *BlockSubFigure) GenerateHTMLTagPrefix() string {
 		"<img src=\"%v\"",
 		b.Source,
 	)
-	if b.Padding != "" {
-		imgTag += fmt.Sprintf(
-			" style=\"padding: %v;\">",
-			b.Padding,
-		)
+	if b.Padding != "" || b.Width != "" {
+		imgTag += " style=\""
+		if b.Padding != "" {
+			imgTag += fmt.Sprintf("padding: %v;", b.Padding)
+		}
+		if b.Width != "" {
+			imgTag += fmt.Sprintf("width: %v;", b.Width)
+		}
+		imgTag += "\">"
 	} else {
 		imgTag += ">"
 	}

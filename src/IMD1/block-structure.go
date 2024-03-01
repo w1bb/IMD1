@@ -1177,7 +1177,9 @@ const (
 	BlockMathTypeDoubleDollar BlockMathType = iota
 	BlockMathTypeBrackets
 	BlockMathTypeBeginEquation
+	BlockMathTypeBeginEquationStar
 	BlockMathTypeBeginAlign
+	BlockMathTypeBeginAlignStar
 )
 
 func (t BlockMathType) String() string {
@@ -1188,8 +1190,12 @@ func (t BlockMathType) String() string {
 		return "Brackets <=> \\[...\\]"
 	case BlockMathTypeBeginEquation:
 		return "BeginEquation <=> \\begin{equation}...\\end{equation}"
+	case BlockMathTypeBeginEquationStar:
+		return "BeginEquationStar <=> \\begin{equation*}...\\end{equation*}"
 	case BlockMathTypeBeginAlign:
 		return "BeginAlign <=> \\begin{align}...\\end{align}"
+	case BlockMathTypeBeginAlignStar:
+		return "BeginAlignStar <=> \\begin{align*}...\\end{align*}"
 	default:
 		panic(nil) // This should never be reached
 	}
@@ -1215,8 +1221,14 @@ func (b *BlockMath) CheckBlockStarts(line LineStruct) bool {
 	if CheckRunesEndWithUnescapedASCII(s, "\\begin{equation}") {
 		b.TypeOfBlock = BlockMathTypeBeginEquation
 		return true
+	} else if CheckRunesEndWithUnescapedASCII(s, "\\begin{equation*}") {
+		b.TypeOfBlock = BlockMathTypeBeginEquationStar
+		return true
 	} else if CheckRunesEndWithUnescapedASCII(s, "\\begin{align}") {
 		b.TypeOfBlock = BlockMathTypeBeginAlign
+		return true
+	} else if CheckRunesEndWithUnescapedASCII(s, "\\begin{align*}") {
+		b.TypeOfBlock = BlockMathTypeBeginAlignStar
 		return true
 	} else if CheckRunesEndWithUnescapedASCII(s, "\\[") {
 		b.TypeOfBlock = BlockMathTypeBrackets
@@ -1246,8 +1258,12 @@ func (b *BlockMath) ExecuteAfterBlockStarts(line *LineStruct) {
 	switch b.TypeOfBlock {
 	case BlockMathTypeBeginEquation:
 		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 16}
+	case BlockMathTypeBeginEquationStar:
+		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 17}
 	case BlockMathTypeBeginAlign:
 		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 13}
+	case BlockMathTypeBeginAlignStar:
+		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 14}
 	case BlockMathTypeBrackets, BlockMathTypeDoubleDollar:
 		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 2}
 	}
@@ -1259,8 +1275,12 @@ func (b *BlockMath) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bo
 	switch b.TypeOfBlock {
 	case BlockMathTypeBeginEquation:
 		return CheckRunesEndWithUnescapedASCII(s, "\\end{equation}"), nil, 0
+	case BlockMathTypeBeginEquationStar:
+		return CheckRunesEndWithUnescapedASCII(s, "\\end{equation*}"), nil, 0
 	case BlockMathTypeBeginAlign:
 		return CheckRunesEndWithUnescapedASCII(s, "\\end{align}"), nil, 0
+	case BlockMathTypeBeginAlignStar:
+		return CheckRunesEndWithUnescapedASCII(s, "\\end{align*}"), nil, 0
 	case BlockMathTypeBrackets:
 		return CheckRunesEndWithUnescapedASCII(s, "\\]"), nil, 0
 	case BlockMathTypeDoubleDollar:
@@ -1280,10 +1300,20 @@ func (b *BlockMath) ExecuteAfterBlockEnds(line *LineStruct) {
 			i: line.LineIndex,
 			j: line.RuneJ - 14,
 		}
+	case BlockMathTypeBeginEquationStar:
+		b.ContentEnd = Pair[int, int]{
+			i: line.LineIndex,
+			j: line.RuneJ - 15,
+		}
 	case BlockMathTypeBeginAlign:
 		b.ContentEnd = Pair[int, int]{
 			i: line.LineIndex,
 			j: line.RuneJ - 11,
+		}
+	case BlockMathTypeBeginAlignStar:
+		b.ContentEnd = Pair[int, int]{
+			i: line.LineIndex,
+			j: line.RuneJ - 12,
 		}
 	case BlockMathTypeBrackets, BlockMathTypeDoubleDollar:
 		b.ContentEnd = Pair[int, int]{
@@ -2039,6 +2069,7 @@ type BlockSubFigure struct {
 	BlockStruct
 	Source  string
 	Padding string
+	Width   string
 }
 
 func (b *BlockSubFigure) String() string {
@@ -2063,12 +2094,15 @@ func (b *BlockSubFigure) ExecuteAfterBlockStarts(line *LineStruct) {
 		i: line.LineIndex,
 		j: line.RuneJ - 11,
 	}
-	options := GatherBlockOptions(line, []string{"src", "padding"})
+	options := GatherBlockOptions(line, []string{"src", "padding", "width"})
 	if value, ok := options["src"]; ok {
 		b.Source = value
 	}
 	if value, ok := options["padding"]; ok {
 		b.Padding = value
+	}
+	if value, ok := options["width"]; ok {
+		b.Width = value
 	}
 	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,

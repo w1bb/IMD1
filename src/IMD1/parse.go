@@ -710,21 +710,6 @@ func GenerateBibliography(mp map[string]BibliographyEntry) string {
 // =====================================
 // Paragraph parse
 
-func ParagraphInsertRawHelper(tree *Tree[BlockInterface], s *string) {
-	if *s != "" {
-		tree.Children = append(tree.Children,
-			&Tree[BlockInterface]{
-				Parent: tree,
-				Value: &BlockInline{
-					Content: &InlineRawString{
-						Content: *s,
-					},
-				},
-			})
-		*s = ""
-	}
-}
-
 func ParagraphInsertRawHelperBuilder(tree *Tree[BlockInterface], sb *strings.Builder) {
 	if sb.Len() > 0 {
 		tree.Children = append(tree.Children,
@@ -836,10 +821,10 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 	}
 
 	var delimiterStack Stack[InlineDelimiter]
-	currentString := ""
+	var currentStringBuilder strings.Builder
 	for childI := 0; ; childI++ {
 		if childI == len(tree.Children) {
-			ParagraphInsertRawHelper(contentTree, &currentString)
+			ParagraphInsertRawHelperBuilder(contentTree, &currentStringBuilder)
 			break
 		}
 		treeChild := tree.Children[childI]
@@ -858,7 +843,7 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 		}
 
 		if !isRaw {
-			ParagraphInsertRawHelper(contentTree, &currentString)
+			ParagraphInsertRawHelperBuilder(contentTree, &currentStringBuilder)
 			treeChild.Parent = contentTree
 			if isHref {
 				aux := ParseSingleBlockInlineEmphasis(treeChild)
@@ -876,19 +861,20 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 				if isEscaped {
 					switch c {
 					case '_', '*', '|', '~', '<', '>', '\\':
-						currentString += string(c)
+						currentStringBuilder.WriteRune(c)
 					default:
 						log.Warnf(
 							"Unrecognized escape sequence \"\\%v\". Please use \"\\\\%v\" instead. The sequence will be treated as \"\\\\%v\"...",
 							c, c, c,
 						)
-						currentString += "\\" + string(c)
+						currentStringBuilder.WriteRune('\\')
+						currentStringBuilder.WriteRune(c)
 					}
 					isEscaped = false
 				} else {
 					switch c {
 					case '_', '*', '~':
-						ParagraphInsertRawHelper(contentTree, &currentString)
+						ParagraphInsertRawHelperBuilder(contentTree, &currentStringBuilder)
 						delimCount := 0
 						for parsingNow[cI] == c {
 							delimCount++
@@ -983,13 +969,12 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 					case '\\':
 						isEscaped = true
 					default:
-						currentString += string(c)
+						currentStringBuilder.WriteRune(c)
 					}
 				}
 			}
 		}
 	}
-
 	return contentTree
 }
 
@@ -1161,7 +1146,7 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file *FileStruct) *Tr
 					default:
 						panic(nil) // This should never be reached!
 					}
-					currentStringBuilder.WriteRune(')')
+					currentStringBuilder.WriteRune('(')
 				case ')':
 					switch PdmState {
 					case PDMLinkStateStart, PDMLinkStateTextLastSpace, PDMLinkStateTextLastSqBracket:
