@@ -224,16 +224,14 @@ func (b *BlockInlineCodeListing) GenerateHTMLTagSuffix() string {
 func (b *BlockMath) GenerateHTMLTagPrefix() string {
 	var s string
 	switch b.TypeOfBlock {
-	case BlockMathTypeDoubleDollar, BlockMathTypeBrackets:
+	case BlockMathTypeDoubleDollar, BlockMathTypeBrackets, BlockMathTypeBeginEquationStar:
 		s = "\\["
 	case BlockMathTypeBeginEquation:
 		s = "\\begin{equation}"
-	case BlockMathTypeBeginEquationStar:
-		s = "\\begin{equation*}"
 	case BlockMathTypeBeginAlign:
 		s = "\\begin{align}"
 	case BlockMathTypeBeginAlignStar:
-		s = "\\begin{align*}"
+		s = "\\[\\begin{split}"
 	default:
 		panic(nil) // This should never be reached
 	}
@@ -242,16 +240,14 @@ func (b *BlockMath) GenerateHTMLTagPrefix() string {
 
 func (b *BlockMath) GenerateHTMLTagSuffix() string {
 	switch b.TypeOfBlock {
-	case BlockMathTypeDoubleDollar, BlockMathTypeBrackets:
+	case BlockMathTypeDoubleDollar, BlockMathTypeBrackets, BlockMathTypeBeginEquationStar:
 		return "\\]\n"
 	case BlockMathTypeBeginEquation:
 		return "\\end{equation}\n"
-	case BlockMathTypeBeginEquationStar:
-		return "\\end{equation*}\n"
 	case BlockMathTypeBeginAlign:
 		return "\\end{align}\n"
 	case BlockMathTypeBeginAlignStar:
-		return "\\end{align*}\n"
+		return "\\end{split}\\]\n"
 	default:
 		panic(nil) // This should never be reached
 	}

@@ -1246,7 +1246,7 @@ func (b *BlockMath) CheckBlockStarts(line LineStruct) bool {
 
 func (b *BlockMath) SeekBufferAfterBlockStarts() int {
 	switch b.TypeOfBlock {
-	case BlockMathTypeBeginEquation, BlockMathTypeBeginAlign, BlockMathTypeBrackets:
+	case BlockMathTypeBeginEquation, BlockMathTypeBeginEquationStar, BlockMathTypeBeginAlign, BlockMathTypeBeginAlignStar, BlockMathTypeBrackets:
 		return 1
 	case BlockMathTypeDoubleDollar:
 		return 2
