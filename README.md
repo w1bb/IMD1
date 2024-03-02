@@ -3,7 +3,7 @@
 
 ![version](https://img.shields.io/badge/version-0.8-orange?style=flat)
 [![License](https://img.shields.io/badge/license-GPL--3.0-red?style=flat)](/LICENSE)
-![docs](https://img.shields.io/badge/docs-50%25-blueviolet?style=flat)
+![docs](https://img.shields.io/badge/docs-40%25-blueviolet?style=flat)
 ![stars](https://img.shields.io/github/stars/w1bb/IMD1)
 
 </div>

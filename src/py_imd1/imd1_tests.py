@@ -19,16 +19,17 @@ from imd1 import IMD1
 
 def run_test_IMD1():
     # TODO - create tests
-    def run_test_md_to_html_1(imd1):
+    def run_test_to_html_1(imd1):
         imd1.reset()
-        imd1.to_html("Hello world")
+        imd1.to_html("|meta>[hidden=true]<meta|Hello world")
         print(imd1.html)
+        print(imd1.meta["hidden"])
         return True
 
     # Run the tests
-    print("Testing IMD1 (run_test_IMD1())")
+    print("Testing IMD1 (run_test_to_html_1())")
     imd1 = IMD1()
-    tests = [run_test_md_to_html_1]
+    tests = [run_test_to_html_1]
     for test in tests:
         print(f"> Test {test.__name__} <=> ", end='')
         test_ok = test(imd1)

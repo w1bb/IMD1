@@ -41,6 +41,7 @@ type ParsingStack struct {
 // Meta data structure
 
 type MDMetaStructure struct {
+	Hidden    bool
 	Author    string
 	Copyright string
 }
@@ -55,6 +56,11 @@ func (m MDMetaStructure) String() string {
 
 func (m MDMetaStructure) Serialize() []byte {
 	r := make([]byte, 0)
+	if m.Hidden {
+		r = append(r, byte(1))
+	} else {
+		r = append(r, byte(0))
+	}
 	r = append(r, StringSerialize(m.Author)...)
 	r = append(r, StringSerialize(m.Copyright)...)
 	return r
@@ -326,16 +332,28 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 			if tree.Value.(*BlockSubFigure).Padding == "" {
 				tree.Value.(*BlockSubFigure).Padding = tree.Parent.Value.(*BlockFigure).Padding
 			}
+		case reflect.TypeOf(&BlockMeta{}):
+			if mdMeta.Author != "" && tree.Value.(*BlockMeta).Author != "" {
+				log.Warnf("Overwriting meta-author (from %v to %v)\n", mdMeta.Author, tree.Value.(*BlockMeta).Author)
+			}
+			mdMeta.Author = tree.Value.(*BlockMeta).Author
+			mdMeta.Hidden = tree.Value.(*BlockMeta).Hidden
 		case reflect.TypeOf(&BlockMetaAuthor{}):
 			// Sanity check
 			if reflect.TypeOf(tree.Parent.Value) != reflect.TypeOf(&BlockMeta{}) {
 				panic(nil)
+			}
+			if mdMeta.Author != "" {
+				log.Warnf("Overwriting meta-author (from %v to %v)\n", mdMeta.Author, *tree.Value.GetRawContent())
 			}
 			mdMeta.Author = *tree.Value.GetRawContent()
 		case reflect.TypeOf(&BlockMetaCopyright{}):
 			// Sanity check
 			if reflect.TypeOf(tree.Parent.Value) != reflect.TypeOf(&BlockMeta{}) {
 				panic(nil)
+			}
+			if mdMeta.Copyright != "" {
+				log.Warnf("Overwriting meta-copyright (from %v to %v)\n", mdMeta.Copyright, *tree.Value.GetRawContent())
 			}
 			mdMeta.Copyright = *tree.Value.GetRawContent()
 		case reflect.TypeOf(&BlockMetaBibInfo{}):

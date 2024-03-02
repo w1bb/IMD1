@@ -1010,7 +1010,7 @@ func (b *BlockCodeListing) ExecuteAfterBlockStarts(line *LineStruct) {
 		b.TextAlign = value
 	}
 	if value, ok := options["copy"]; ok {
-		b.AllowCopy = Contains([]string{"allow", "allowed", "1", "true", "ok", "yes"}, value)
+		b.AllowCopy = StringToBool(value)
 	}
 	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
@@ -2614,11 +2614,15 @@ func (b *BlockBibliography) GetRawContent() *string {
 
 type BlockMeta struct {
 	BlockStruct
+	Author string
+	Hidden bool
 }
 
 func (b *BlockMeta) String() string {
 	return fmt.Sprintf(
-		"BlockMeta, %v",
+		"BlockMeta (author=%v, hidden=%v), %v",
+		b.Author,
+		b.Hidden,
 		b.BlockStruct.String(),
 	)
 }
@@ -2635,6 +2639,13 @@ func (b *BlockMeta) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = Pair[int, int]{
 		i: line.LineIndex,
 		j: line.RuneJ - 6,
+	}
+	options := GatherBlockOptions(line, []string{"hidden", "author"})
+	if value, ok := options["hidden"]; ok {
+		b.Hidden = StringToBool(value)
+	}
+	if value, ok := options["author"]; ok {
+		b.Author = value
 	}
 	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
@@ -2883,7 +2894,7 @@ func (b *BlockMetaBibInfo) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 	options := GatherBlockOptions(line, []string{"inline", "ref-file"})
 	if value, ok := options["inline"]; ok {
-		b.JSONInline = Contains([]string{"allow", "allowed", "1", "true", "ok", "yes"}, value)
+		b.JSONInline = StringToBool(value)
 	}
 	if value, ok := options["ref-file"]; ok {
 		b.RefFile = value

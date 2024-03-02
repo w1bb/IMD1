@@ -38,6 +38,8 @@ class IMD1:
     def __fill_meta(self, buffer):
         b = ctypes.cast(buffer, ctypes.c_void_p).value
         self.meta = {}
+        self.meta["hidden"] = True if ctypes.c_uint8.from_address(b).value == 1 else False
+        b += 1
         author_len = ctypes.c_uint32.from_address(b).value
         if author_len > 0:
             self.meta["author"] = ctypes.string_at(b+4, author_len).decode('utf-8')

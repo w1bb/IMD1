@@ -153,6 +153,10 @@ func GatherBlockOptions(line *LineStruct, pool []string) map[string]string {
 	return result
 }
 
+func StringToBool(s string) bool {
+	return Contains([]string{"allow", "allowed", "1", "true", "ok", "yes"}, strings.ToLower(s))
+}
+
 func StringToHTMLSafe(s string) string {
 	var sb strings.Builder
 	for _, c := range s {
