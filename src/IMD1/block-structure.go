@@ -49,6 +49,13 @@ func (b BlockStruct) Empty() bool {
 	return b.Start == b.End
 }
 
+type BlockEndDetails struct {
+	EndNormally            bool
+	EndViaNLI              bool
+	DisallowUlLiEndUntilNL bool
+	DisallowOlLiEndUntilNL bool
+}
+
 // =====================================
 // Generic block interface
 
@@ -62,8 +69,7 @@ type BlockInterface interface {
 	SeekBufferAfterBlockStarts() int
 	ExecuteAfterBlockStarts(line *LineStruct)
 
-	CheckBlockEndsNormally(line *LineStruct, parsingStack ParsingStack) (bool, BlockInterface, int)
-	CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool
+	CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack)
 	ExecuteAfterBlockEnds(line *LineStruct)
 
 	SeekBufferAfterBlockEnds() int
@@ -128,16 +134,13 @@ func (b *BlockDocument) ExecuteAfterBlockStarts(_ *LineStruct) {
 	// irrelevant
 }
 
-func (b *BlockDocument) CheckBlockEndsNormally(_ *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return false, nil, 0 // irrelevant
+func (b *BlockDocument) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = false
+	bed.EndViaNLI = false
 }
 
 func (b *BlockDocument) SeekBufferAfterBlockEnds() int {
 	return 0 // irrelevant
-}
-
-func (b *BlockDocument) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false // irrelevant
 }
 
 func (b *BlockDocument) ExecuteAfterBlockEnds(_ *LineStruct) {
@@ -215,8 +218,10 @@ func (b *BlockParagraph) ExecuteAfterBlockStarts(_ *LineStruct) {
 	// irrelevant
 }
 
-func (b *BlockParagraph) CheckBlockEndsNormally(_ *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return false, nil, 0 // irrelevant
+func (b *BlockParagraph) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	// irrelevant
+	bed.EndNormally = false
+	bed.EndViaNLI = false
 }
 
 func (b *BlockParagraph) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
@@ -302,12 +307,9 @@ func (b *BlockHeading) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockHeading) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return line.LineIndex != b.Start.i, nil, 0
-}
-
-func (b *BlockHeading) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockHeading) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = line.LineIndex != b.Start.i
+	bed.EndViaNLI = false
 }
 
 func (b *BlockHeading) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -396,12 +398,9 @@ func (b *BlockTextBox) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockTextBox) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<textbox|"), nil, 0
-}
-
-func (b *BlockTextBox) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockTextBox) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<textbox|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockTextBox) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -480,8 +479,9 @@ func (b *BlockTextBoxTitle) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockTextBoxTitle) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<title|"), nil, 0
+func (b *BlockTextBoxTitle) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<title|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockTextBoxTitle) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
@@ -568,12 +568,9 @@ func (b *BlockTextBoxContent) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockTextBoxContent) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<content|"), nil, 0
-}
-
-func (b *BlockTextBoxContent) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockTextBoxContent) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<content|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockTextBoxContent) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -669,12 +666,9 @@ func (b *BlockToggle) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockToggle) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<toggle|"), nil, 0
-}
-
-func (b *BlockToggle) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockToggle) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<toggle|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockToggle) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -755,12 +749,9 @@ func (b *BlockComment) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockComment) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "-->"), nil, 0
-}
-
-func (b *BlockComment) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockComment) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "-->")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockComment) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -837,12 +828,9 @@ func (b *BlockHTML) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockHTML) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<html|"), nil, 0
-}
-
-func (b *BlockHTML) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockHTML) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<html|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockHTML) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -919,12 +907,9 @@ func (b *BlockLaTeX) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockLaTeX) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<latex|"), nil, 0
-}
-
-func (b *BlockLaTeX) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockLaTeX) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<latex|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockLaTeX) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -1033,12 +1018,9 @@ func (b *BlockCodeListing) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockCodeListing) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "```"), nil, 0
-}
-
-func (b *BlockCodeListing) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockCodeListing) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "```")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockCodeListing) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -1121,8 +1103,9 @@ func (b *BlockInlineCodeListing) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockInlineCodeListing) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "`"), nil, 0
+func (b *BlockInlineCodeListing) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "`")
+	bed.EndViaNLI = false // TODO
 }
 
 func (b *BlockInlineCodeListing) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
@@ -1268,6 +1251,28 @@ func (b *BlockMath) ExecuteAfterBlockStarts(line *LineStruct) {
 		b.Start = Pair[int, int]{line.LineIndex, line.RuneJ - 2}
 	}
 	b.ContentStart = Pair[int, int]{line.LineIndex, line.RuneJ}
+}
+
+func (b *BlockMath) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = func() bool {
+		s := line.RuneContent[:line.RuneJ+1]
+		switch b.TypeOfBlock {
+		case BlockMathTypeBeginEquation:
+			return CheckRunesEndWithUnescapedASCII(s, "\\end{equation}")
+		case BlockMathTypeBeginEquationStar:
+			return CheckRunesEndWithUnescapedASCII(s, "\\end{equation*}")
+		case BlockMathTypeBeginAlign:
+			return CheckRunesEndWithUnescapedASCII(s, "\\end{align}")
+		case BlockMathTypeBeginAlignStar:
+			return CheckRunesEndWithUnescapedASCII(s, "\\end{align*}")
+		case BlockMathTypeBrackets:
+			return CheckRunesEndWithUnescapedASCII(s, "\\]")
+		case BlockMathTypeDoubleDollar:
+			return CheckRunesEndWithUnescapedASCII(s, "$$")
+		}
+		panic(nil) // This should never be reached
+	}()
+	bed.EndViaNLI = false
 }
 
 func (b *BlockMath) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
@@ -1430,19 +1435,22 @@ func (b *BlockInlineMath) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockInlineMath) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	s := line.RuneContent[:line.RuneJ+1]
-	switch b.TypeOfBlock {
-	case BlockInlineMathTypeParenthesis:
-		return CheckRunesEndWithUnescapedASCII(s, "\\)"), nil, 0
-	case BlockInlineMathTypeSingleDollar:
-		return CheckRunesEndWithUnescapedASCII(s, "$"), nil, 0
+func (b *BlockInlineMath) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = func() bool {
+		s := line.RuneContent[:line.RuneJ+1]
+		switch b.TypeOfBlock {
+		case BlockInlineMathTypeParenthesis:
+			return CheckRunesEndWithUnescapedASCII(s, "\\)")
+		case BlockInlineMathTypeSingleDollar:
+			return CheckRunesEndWithUnescapedASCII(s, "$")
+		}
+		panic(nil) // This should never be reached
+	}()
+	bed.EndViaNLI = false
+	if bed.EndNormally || bed.EndViaNLI {
+		bed.DisallowUlLiEndUntilNL = true // experimental
+		bed.DisallowOlLiEndUntilNL = true // experimental
 	}
-	panic(nil) // This should never be reached
-}
-
-func (b *BlockInlineMath) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
 }
 
 func (b *BlockInlineMath) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -1525,12 +1533,9 @@ func (b *BlockUl) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = b.ContentStart
 }
 
-func (b *BlockUl) CheckBlockEndsNormally(_ *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return false, nil, 0
-}
-
-func (b *BlockUl) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
-	return NewLines >= 1 || Indentation < b.Indentation
+func (b *BlockUl) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = false
+	bed.EndViaNLI = NewLines >= 1 || Indentation < b.Indentation
 }
 
 func (b *BlockUl) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -1613,25 +1618,21 @@ func (b *BlockUlLi) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockUlLi) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	// Ignore the same li
-	if line.LineIndex == b.LineIndex {
-		return false, nil, 0
+func (b *BlockUlLi) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	if !bed.DisallowUlLiEndUntilNL {
+		if line.LineIndex == b.LineIndex { // Ignore the same li
+			bed.EndNormally = false
+		} else if aux := (BlockOlLi{}); aux.CheckBlockStarts(*line) && aux.Indentation <= b.Indentation { // Check if a new ordered list could begin instead
+			bed.EndNormally = true
+		} else if aux := (BlockUlLi{}); aux.CheckBlockStarts(*line) { // A li can end when a new one starts. Make sure to accept nested lis
+			bed.EndNormally = aux.Indentation <= b.Indentation
+		} else {
+			bed.EndNormally = line.Indentation != b.Indentation+2
+		}
+	} else {
+		bed.EndNormally = false
 	}
-	// Check if a new ordered list could begin instead
-	if aux := (BlockOlLi{}); aux.CheckBlockStarts(*line) && aux.Indentation <= b.Indentation {
-		return true, nil, 0
-	}
-	// A li can end when a new one starts. Make sure to accept nested lists
-	if aux := (BlockUlLi{}); aux.CheckBlockStarts(*line) {
-		return aux.Indentation <= b.Indentation, nil, 0
-	}
-	// Different indentation
-	return line.Indentation != b.Indentation+2, nil, 0
-}
-
-func (b *BlockUlLi) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
-	return NewLines >= 1 && Indentation != b.Indentation+2
+	bed.EndViaNLI = NewLines >= 1 && Indentation != b.Indentation+2
 }
 
 func (b *BlockUlLi) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -1763,12 +1764,9 @@ func (b *BlockOl) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Start = b.ContentStart
 }
 
-func (b *BlockOl) CheckBlockEndsNormally(_ *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return false, nil, 0
-}
-
-func (b *BlockOl) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
-	return NewLines >= 1 || Indentation < b.Indentation
+func (b *BlockOl) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = false
+	bed.EndViaNLI = NewLines >= 1 || Indentation < b.Indentation
 }
 
 func (b *BlockOl) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -1872,25 +1870,21 @@ func (b *BlockOlLi) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockOlLi) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	// Ignore the same li
-	if line.LineIndex == b.LineIndex {
-		return false, nil, 0
+func (b *BlockOlLi) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	if !bed.DisallowOlLiEndUntilNL {
+		if line.LineIndex == b.LineIndex { // Ignore the same li
+			bed.EndNormally = false
+		} else if aux := (BlockUlLi{}); aux.CheckBlockStarts(*line) && aux.Indentation <= b.Indentation { // Check if a new unordered list could begin instead
+			bed.EndNormally = true
+		} else if aux := (BlockOlLi{}); aux.CheckBlockStarts(*line) { // A li can end when a new one starts. Make sure to accept nested lists
+			bed.EndNormally = aux.Indentation <= b.Indentation || aux.TypeOfBlock != b.TypeOfBlock
+		} else { // // Different indentation
+			bed.EndNormally = line.Indentation != b.Indentation+3
+		}
+	} else {
+		bed.EndNormally = false
 	}
-	// Check if a new unordered list could begin instead
-	if aux := (BlockUlLi{}); aux.CheckBlockStarts(*line) && aux.Indentation <= b.Indentation {
-		return true, nil, 0
-	}
-	// A li can end when a new one starts. Make sure to accept nested lists
-	if aux := (BlockOlLi{}); aux.CheckBlockStarts(*line) {
-		return aux.Indentation <= b.Indentation || aux.TypeOfBlock != b.TypeOfBlock, nil, 0
-	}
-	// Different indentation
-	return line.Indentation != b.Indentation+3, nil, 0
-}
-
-func (b *BlockOlLi) CheckBlockEndsViaNewLinesAndIndentation(NewLines int, Indentation uint16) bool {
-	return NewLines >= 1 && Indentation != b.Indentation+3
+	bed.EndViaNLI = NewLines >= 1 && Indentation != b.Indentation+3
 }
 
 func (b *BlockOlLi) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -2010,12 +2004,9 @@ func (b *BlockFigure) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockFigure) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<figure|"), nil, 0
-}
-
-func (b *BlockFigure) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockFigure) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<figure|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockFigure) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -2110,8 +2101,9 @@ func (b *BlockSubFigure) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockSubFigure) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<subfigure|"), nil, 0
+func (b *BlockSubFigure) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<subfigure|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockSubFigure) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -2123,10 +2115,6 @@ func (b *BlockSubFigure) ExecuteAfterBlockEnds(line *LineStruct) {
 		i: line.LineIndex,
 		j: line.RuneJ - 11,
 	}
-}
-
-func (b *BlockSubFigure) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
 }
 
 func (b *BlockSubFigure) SeekBufferAfterBlockEnds() int {
@@ -2211,12 +2199,9 @@ func (b *BlockTabs) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockTabs) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<tabs|"), nil, 0
-}
-
-func (b *BlockTabs) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockTabs) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<tabs|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockTabs) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -2303,8 +2288,9 @@ func (b *BlockTabsTab) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockTabsTab) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<tab|"), nil, 0
+func (b *BlockTabsTab) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<tab|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockTabsTab) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -2316,10 +2302,6 @@ func (b *BlockTabsTab) ExecuteAfterBlockEnds(line *LineStruct) {
 		i: line.LineIndex,
 		j: line.RuneJ - 5,
 	}
-}
-
-func (b *BlockTabsTab) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
 }
 
 func (b *BlockTabsTab) SeekBufferAfterBlockEnds() int {
@@ -2397,12 +2379,9 @@ func (b *BlockFootnote) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockFootnote) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<footnote|"), nil, 0
-}
-
-func (b *BlockFootnote) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockFootnote) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<footnote|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockFootnote) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -2497,12 +2476,9 @@ func (b *BlockRef) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockRef) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<ref|"), nil, 0
-}
-
-func (b *BlockRef) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockRef) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<ref|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockRef) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -2589,12 +2565,9 @@ func (b *BlockBibliography) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockBibliography) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<bibliography|"), nil, 0
-}
-
-func (b *BlockBibliography) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockBibliography) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<bibliography|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockBibliography) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -2669,12 +2642,9 @@ func (b *BlockMeta) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockMeta) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<meta|"), nil, 0
-}
-
-func (b *BlockMeta) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockMeta) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<meta|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockMeta) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -2756,12 +2726,9 @@ func (b *BlockMetaAuthor) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockMetaAuthor) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<author|"), nil, 0
-}
-
-func (b *BlockMetaAuthor) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockMetaAuthor) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<author|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockMetaAuthor) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -2838,12 +2805,9 @@ func (b *BlockMetaCopyright) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockMetaCopyright) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<copyright|"), nil, 0
-}
-
-func (b *BlockMetaCopyright) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockMetaCopyright) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<copyright|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockMetaCopyright) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -2930,12 +2894,9 @@ func (b *BlockMetaBibInfo) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 }
 
-func (b *BlockMetaBibInfo) CheckBlockEndsNormally(line *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<bibinfo|"), nil, 0
-}
-
-func (b *BlockMetaBibInfo) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false
+func (b *BlockMetaBibInfo) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<bibinfo|")
+	bed.EndViaNLI = false
 }
 
 func (b *BlockMetaBibInfo) ExecuteAfterBlockEnds(line *LineStruct) {
@@ -3003,12 +2964,10 @@ func (b *BlockInline) ExecuteAfterBlockStarts(_ *LineStruct) {
 	// irrelevant
 }
 
-func (b *BlockInline) CheckBlockEndsNormally(_ *LineStruct, _ ParsingStack) (bool, BlockInterface, int) {
-	return false, nil, 0 // irrelevant
-}
-
-func (b *BlockInline) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
-	return false // irrelevant
+func (b *BlockInline) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	// irrelevant
+	bed.EndNormally = false
+	bed.EndViaNLI = false
 }
 
 func (b *BlockInline) ExecuteAfterBlockEnds(_ *LineStruct) {

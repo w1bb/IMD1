@@ -72,6 +72,7 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 
 	justSkipped := 16 // considered infinite
 	for i := range file.Lines {
+		bed := new(BlockEndDetails)
 		if file.Lines[i].Empty() {
 			justSkipped++
 			continue
@@ -82,13 +83,13 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 			}
 			// Check if we can end this block
 			for file.Lines[i].RuneJ < len(file.Lines[i].RuneContent) {
-				shouldEndBlock, shouldDiscardBlock, shouldDiscardSeek := currentBlock.Value.CheckBlockEndsNormally(&file.Lines[i], parsingStack)
-				if !shouldEndBlock {
-					shouldEndBlock = currentBlock.Value.CheckBlockEndsViaNewLinesAndIndentation(justSkipped, file.Lines[i].Indentation)
-				}
-				if !shouldEndBlock {
+				currentBlock.Value.CheckBlockEnds(&file.Lines[i], bed, justSkipped, file.Lines[i].Indentation, parsingStack)
+
+				if !bed.EndNormally && !bed.EndViaNLI {
 					break
 				}
+				//shouldDiscardBlock := nil // TODO - refactor
+				//shouldDiscardSeek := 0
 				log.Debugf(
 					"<<< End of %v (line-index=%v, line-j=%v)",
 					currentBlock.Value,
@@ -103,16 +104,16 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 				}
 
 				// Discard if needed
-				if shouldDiscardBlock != nil {
-					file.Lines[i].RuneJ += shouldDiscardSeek
-					for reflect.TypeOf(currentBlock.Value) != reflect.TypeOf(shouldDiscardBlock) {
-						fmt.Printf("SOFT Discarding %v (%T != %T)\n", currentBlock.Value, currentBlock.Value, shouldDiscardBlock)
-						// TODO - remove
-						currentBlock.Value.ExecuteAfterBlockEnds(&file.Lines[i])
-						currentBlock = currentBlock.Parent
-					}
-					file.Lines[i].RuneJ -= shouldDiscardSeek
-				}
+				//if shouldDiscardBlock != nil {
+				//	file.Lines[i].RuneJ += shouldDiscardSeek
+				//	for reflect.TypeOf(currentBlock.Value) != reflect.TypeOf(shouldDiscardBlock) {
+				//		fmt.Printf("SOFT Discarding %v (%T != %T)\n", currentBlock.Value, currentBlock.Value, shouldDiscardBlock)
+				//		// TODO - remove
+				//		currentBlock.Value.ExecuteAfterBlockEnds(&file.Lines[i])
+				//		currentBlock = currentBlock.Parent
+				//	}
+				//	file.Lines[i].RuneJ -= shouldDiscardSeek
+				//}
 
 				file.Lines[i].RuneJ += currentBlock.Value.SeekBufferAfterBlockEnds()
 				currentBlock.Value.ExecuteAfterBlockEnds(&file.Lines[i])
@@ -1024,7 +1025,7 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file *FileStruct) *Tr
 	for current, expectedChildI := (Pair[int, int]{i: p.ContentStart.i, j: p.ContentStart.j - 1}), 0; ; {
 		current.j++
 		if current.j >= len(file.Lines[current.i].RuneContent) {
-			if currentStringBuilder.Len() > 0 && currentStringLastChar != ' ' {
+			if currentStringBuilder.Len() == 0 || currentStringBuilder.Len() > 0 && currentStringLastChar != ' ' {
 				currentStringBuilder.WriteRune(' ')
 				currentStringLastChar = ' '
 			}

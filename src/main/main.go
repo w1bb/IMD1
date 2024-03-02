@@ -18,9 +18,10 @@
 package main
 
 import (
+	"os"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/w1bb/IMD1/src/IMD1"
-	"os"
 )
 
 // =====================================
