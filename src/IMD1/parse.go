@@ -878,17 +878,8 @@ func ParseSingleBlockInlineEmphasis(tree *Tree[BlockInterface]) *Tree[BlockInter
 			for cI := 0; cI < len(parsingNow); cI++ {
 				c := parsingNow[cI]
 				if isEscaped {
-					switch c {
-					case '_', '*', '|', '~', '<', '>', '\\':
-						currentStringBuilder.WriteRune(c)
-					default:
-						log.Warnf(
-							"Unrecognized escape sequence \"\\%v\". Please use \"\\\\%v\" instead. The sequence will be treated as \"\\\\%v\"...",
-							c, c, c,
-						)
-						currentStringBuilder.WriteRune('\\')
-						currentStringBuilder.WriteRune(c)
-					}
+					_, cStr := CheckRecognizedEscapeSequence(c)
+					currentStringBuilder.WriteString(cStr)
 					isEscaped = false
 				} else {
 					switch c {
@@ -1087,17 +1078,8 @@ func ParseSingleParagraphLinks(tree *Tree[BlockInterface], file *FileStruct) *Tr
 			c := file.Lines[current.i].RuneContent[current.j]
 			currentStringLastChar = c
 			if isEscaped {
-				switch c {
-				case '_', '*', '|', '~', '<', '>', '\\':
-					currentStringBuilder.WriteRune(c)
-				default:
-					log.Warnf(
-						"Unrecognized escape sequence \"\\%v\". Please use \"\\\\%v\" instead. The sequence will be treated as \"\\\\%v\"...",
-						c, c, c,
-					)
-					currentStringBuilder.WriteRune('\\')
-					currentStringBuilder.WriteRune(c)
-				}
+				_, cStr := CheckRecognizedEscapeSequence(c)
+				currentStringBuilder.WriteString(cStr)
 				isEscaped = false
 			} else {
 				switch c {

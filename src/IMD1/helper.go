@@ -223,3 +223,19 @@ func StringDeserialize(b []byte) string {
 	}
 	return sb.String()
 }
+
+// - - - - -
+
+func CheckRecognizedEscapeSequence(c rune) (bool, string) {
+	switch c {
+	case '_', '*', '|', '~', '<', '>', '\\', '$', '`':
+		return true, string(c)
+	default:
+		r := "\\" + string(c)
+		log.Warnf(
+			"Unrecognized escape sequence \"%v\". Please use \"\\%v\" instead. The sequence will be treated as \"\\%v\"...",
+			r, r, r,
+		)
+		return false, r
+	}
+}

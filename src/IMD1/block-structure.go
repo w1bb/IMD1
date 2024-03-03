@@ -997,9 +997,12 @@ func (b *BlockCodeListing) ExecuteAfterBlockStarts(line *LineStruct) {
 	b.Language = "plaintext"
 	b.AllowCopy = true
 	if value, ok := options["lang"]; ok {
-		if value == "text" || value == "txt" {
+		switch value {
+		case "text", "txt", "plaintext":
 			b.Language = "plaintext"
-		} else {
+		case "octave", "matlab":
+			b.Language = "matlab"
+		default:
 			b.Language = value
 		}
 	}
