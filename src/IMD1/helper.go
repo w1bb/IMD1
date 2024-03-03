@@ -165,8 +165,30 @@ func StringToHTMLSafe(s string) string {
 			sb.WriteString("&lt;")
 		case '>':
 			sb.WriteString("&gt;")
+		case '&':
+			sb.WriteString("&#38;")
 		case '$':
 			sb.WriteString("&#36;")
+		case '`':
+			sb.WriteString("&#96;")
+		case '^':
+			sb.WriteString("&#94;")
+		case '"':
+			sb.WriteString("&quot;")
+		case '\'':
+			sb.WriteString("&apos;")
+		case '~':
+			sb.WriteString("&#126;")
+		case '{':
+			sb.WriteString("&#123;")
+		case '}':
+			sb.WriteString("&#125;")
+		case '|':
+			sb.WriteString("&#124;")
+		case '/':
+			sb.WriteString("&#47;")
+		case '\\':
+			sb.WriteString("&#92;")
 		default:
 			sb.WriteRune(c)
 		}
@@ -228,7 +250,7 @@ func StringDeserialize(b []byte) string {
 
 func CheckRecognizedEscapeSequence(c rune) (bool, string) {
 	switch c {
-	case '_', '*', '|', '~', '<', '>', '\\', '$', '`':
+	case '_', '*', '|', '~', '<', '>', '\\', '$', '`', '#':
 		return true, string(c)
 	default:
 		r := "\\" + string(c)

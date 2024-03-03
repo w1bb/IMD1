@@ -448,6 +448,7 @@ type BibliographyEntryType uint8
 const (
 	BibliographyEntryTypeArticle BibliographyEntryType = iota
 	BibliographyEntryTypeBook
+	BibliographyEntryTypeVideo
 	BibliographyEntryTypeOther
 )
 
@@ -457,6 +458,8 @@ func (t BibliographyEntryType) String() string {
 		return "Article"
 	case BibliographyEntryTypeBook:
 		return "Book"
+	case BibliographyEntryTypeVideo:
+		return "Video"
 	case BibliographyEntryTypeOther:
 		return "Other"
 	default:
@@ -497,7 +500,7 @@ func (f BibliographyEntryFields) String() string {
 		s += "pages=" + *f.Pages + ", "
 	}
 	if f.Year != nil {
-		s += "Year=" + *f.Year + ", "
+		s += "year=" + *f.Year + ", "
 	}
 	if f.Publisher != nil {
 		s += "publisher=" + *f.Publisher + ", "
@@ -611,7 +614,10 @@ func ParseBibInfo(b *BlockMetaBibInfo) map[string]BibliographyEntry {
 				entry.Type = BibliographyEntryTypeArticle
 			case "book", "Book":
 				entry.Type = BibliographyEntryTypeBook
+			case "video", "Video":
+				entry.Type = BibliographyEntryTypeVideo
 			case "other", "Other", "unknown", "Unknown":
+				entry.Type = BibliographyEntryTypeOther
 			default:
 				log.Warnf("Unrecognized \"bibliography\" entry type \"%v\" in entry %v, %v. Considering type \"other\"...", entryType, entryI, bibInfoTypeStr)
 			}
@@ -709,6 +715,24 @@ func GenerateBibliography(mp map[string]BibliographyEntry) string {
 				sb.WriteString(*value.Fields.Year)
 				sb.WriteString("</span>")
 			}
+			// Publisher
+			if value.Fields.Publisher != nil {
+				sb.WriteString(", published by <span class=\"publisher\">")
+				sb.WriteString(*value.Fields.Publisher)
+				sb.WriteString("</span>")
+			}
+			// Journal
+			if value.Fields.Journal != nil {
+				sb.WriteString(", in <span class=\"journal\">")
+				sb.WriteString(*value.Fields.Journal)
+				sb.WriteString("</span>")
+			}
+			// Volume
+			if value.Fields.Volume != nil {
+				sb.WriteString(", volume <span class=\"volume\">")
+				sb.WriteString(*value.Fields.Volume)
+				sb.WriteString("</span>")
+			}
 			// URL
 			if value.Fields.URL != nil {
 				sb.WriteString(", <a class=\"url\" href=\"")
@@ -750,7 +774,7 @@ func ParseSingleParagraph(tree *Tree[BlockInterface], file *FileStruct) {
 	// Insert emphasis
 	emphasisParsedTree := ParseSingleBlockInlineEmphasis(linkParsedTree)
 	// Cleanup
-	cleanedTree := CleanupSingleBlockInline(emphasisParsedTree)
+	cleanedTree := CleanupBlockInline(emphasisParsedTree)
 
 	// Convert:        heading-paragraph -> normal heading
 	//          text box title-paragraph -> normal text box title
@@ -763,7 +787,7 @@ func ParseSingleParagraph(tree *Tree[BlockInterface], file *FileStruct) {
 	}
 }
 
-func CleanupSingleBlockInline(contentTree *Tree[BlockInterface]) *Tree[BlockInterface] {
+func CleanupBlockInline(contentTree *Tree[BlockInterface]) *Tree[BlockInterface] {
 	cleanedContentTree := &Tree[BlockInterface]{
 		Parent: contentTree.Parent,
 		Value: &BlockInline{
@@ -802,6 +826,8 @@ func CleanupSingleBlockInline(contentTree *Tree[BlockInterface]) *Tree[BlockInte
 			case reflect.TypeOf(&InlineRawString{}):
 				srb.WriteString(bjc.(*InlineRawString).Content)
 			default:
+				// Before breaking, go deeper
+				contentTree.Children[j] = CleanupBlockInline(contentTree.Children[j])
 				break digging
 			}
 		}
