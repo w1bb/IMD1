@@ -157,6 +157,26 @@ func (b *InlineStringDelimiter) GetRawContent() *string {
 	return nil
 }
 
+func (b *InlineStringDelimiter) ConvertToRaw() string {
+	switch b.TypeOfDelimiter {
+	case InlineDelimiterTypeUnderlineDelimiter:
+		return "_"
+	case InlineDelimiterTypeAsteriskDelimiter:
+		return "*"
+	case InlineDelimiterTypeTildeDelimiter:
+		return "~"
+	case InlineDelimiterTypeOpenBracketDelimiter:
+		return "["
+	case InlineDelimiterTypeCloseBracketDelimiter:
+		return "]"
+	case InlineDelimiterTypeOpenParenthesesDelimiter:
+		return "("
+	case InlineDelimiterTypeCloseParenthesesDelimiter:
+		return ")" // Might never be reached
+	}
+	panic(nil) // This should never be reached
+}
+
 // =====================================
 // Hrefs
 

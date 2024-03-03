@@ -788,15 +788,28 @@ func ParseSingleParagraph(tree *Tree[BlockInterface], file *FileStruct) {
 }
 
 func CleanupBlockInline(contentTree *Tree[BlockInterface]) *Tree[BlockInterface] {
+	if reflect.TypeOf(contentTree.Value) != reflect.TypeOf(&BlockInline{}) {
+		return contentTree
+	}
 	cleanedContentTree := &Tree[BlockInterface]{
 		Parent: contentTree.Parent,
-		Value: &BlockInline{
-			Content: &InlineDocument{},
-		},
+		Value:  new(BlockInline),
+	}
+	originalCvc := contentTree.Value.(*BlockInline).Content
+	switch reflect.TypeOf(originalCvc) {
+	case reflect.TypeOf(&InlineStringModifier{}):
+		cleanedContentTree.Value.(*BlockInline).Content = &InlineStringModifier{
+			TypeOfModifier: originalCvc.(*InlineStringModifier).TypeOfModifier,
+		}
+	case reflect.TypeOf(&InlineDocument{}):
+		cleanedContentTree.Value.(*BlockInline).Content = new(InlineDocument)
+	default:
+		return contentTree
 	}
 	for i := 0; i < len(contentTree.Children); i++ {
 		var srb strings.Builder
 		j := i
+
 	digging:
 		for ; j < len(contentTree.Children); j++ {
 			if reflect.TypeOf(contentTree.Children[j].Value) != reflect.TypeOf(&BlockInline{}) {
@@ -805,24 +818,7 @@ func CleanupBlockInline(contentTree *Tree[BlockInterface]) *Tree[BlockInterface]
 			bjc := contentTree.Children[j].Value.(*BlockInline).Content
 			switch reflect.TypeOf(bjc) {
 			case reflect.TypeOf(&InlineStringDelimiter{}):
-				switch bjc.(*InlineStringDelimiter).TypeOfDelimiter {
-				case InlineDelimiterTypeUnderlineDelimiter:
-					srb.WriteRune('_')
-				case InlineDelimiterTypeAsteriskDelimiter:
-					srb.WriteRune('*')
-				case InlineDelimiterTypeTildeDelimiter:
-					srb.WriteRune('~')
-				case InlineDelimiterTypeOpenBracketDelimiter:
-					srb.WriteRune('[')
-				case InlineDelimiterTypeCloseBracketDelimiter:
-					srb.WriteRune(']')
-				case InlineDelimiterTypeOpenParenthesesDelimiter:
-					srb.WriteRune('(')
-				case InlineDelimiterTypeCloseParenthesesDelimiter:
-					srb.WriteRune(')') // Might never be reached
-				default:
-					panic(nil) // This should never be reached
-				}
+				srb.WriteString(bjc.(*InlineStringDelimiter).ConvertToRaw())
 			case reflect.TypeOf(&InlineRawString{}):
 				srb.WriteString(bjc.(*InlineRawString).Content)
 			default:
@@ -831,6 +827,7 @@ func CleanupBlockInline(contentTree *Tree[BlockInterface]) *Tree[BlockInterface]
 				break digging
 			}
 		}
+
 		if j != i {
 			cleanedContentTree.Children = append(
 				cleanedContentTree.Children,
