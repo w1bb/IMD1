@@ -165,11 +165,9 @@ func StringToHTMLSafe(s string) string {
 			sb.WriteString("&lt;")
 		case '>':
 			sb.WriteString("&gt;")
-		case '&':
-			sb.WriteString("&#38;")
-		case '$':
+		case '$': // Math should be handled by now
 			sb.WriteString("&#36;")
-		case '`':
+		case '`': // Code should be handled by now
 			sb.WriteString("&#96;")
 		case '^':
 			sb.WriteString("&#94;")
