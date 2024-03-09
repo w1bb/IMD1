@@ -1946,17 +1946,19 @@ func (b *BlockOlLi) GetRawContent() *string {
 
 type BlockFigure struct {
 	BlockStruct
-	MaxWidth string
-	Dock     string
-	Padding  string
+	MaxWidth   string
+	Dock       string
+	Padding    string
+	Background string
 }
 
 func (b *BlockFigure) String() string {
 	return fmt.Sprintf(
-		"BlockFigure (max-width=%v, dock=%v, padding=%v), %v",
+		"BlockFigure (max-width=\"%v\", dock=\"%v\", padding=\"%v\", background=\"%v\"), %v",
 		b.MaxWidth,
 		b.Dock,
 		b.Padding,
+		b.Background,
 		b.BlockStruct.String(),
 	)
 }
@@ -1977,7 +1979,7 @@ func (b *BlockFigure) ExecuteAfterBlockStarts(line *LineStruct) {
 		i: line.LineIndex,
 		j: line.RuneJ - 8,
 	}
-	options := GatherBlockOptions(line, []string{"max-width", "dock", "padding"})
+	options := GatherBlockOptions(line, []string{"max-width", "dock", "padding", "background"})
 	b.Dock = "center"
 	if value, ok := options["max-width"]; ok {
 		b.MaxWidth = value
@@ -2000,6 +2002,9 @@ func (b *BlockFigure) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 	if value, ok := options["padding"]; ok {
 		b.Padding = value
+	}
+	if value, ok := options["background"]; ok {
+		b.Background = value
 	}
 	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,
@@ -2061,16 +2066,18 @@ func (b *BlockFigure) GetRawContent() *string {
 
 type BlockSubFigure struct {
 	BlockStruct
-	Source  string
-	Padding string
-	Width   string
+	Source     string
+	Padding    string
+	Width      string
+	Background string
 }
 
 func (b *BlockSubFigure) String() string {
 	return fmt.Sprintf(
-		"BlockSubFigure (source=%v, padding=%v), %v",
+		"BlockSubFigure (source=\"%v\", padding=\"%v\", background=\"%v\"), %v",
 		b.Source,
 		b.Padding,
+		b.Background,
 		b.BlockStruct.String(),
 	)
 }
@@ -2088,7 +2095,7 @@ func (b *BlockSubFigure) ExecuteAfterBlockStarts(line *LineStruct) {
 		i: line.LineIndex,
 		j: line.RuneJ - 11,
 	}
-	options := GatherBlockOptions(line, []string{"src", "padding", "width"})
+	options := GatherBlockOptions(line, []string{"src", "padding", "width", "background"})
 	if value, ok := options["src"]; ok {
 		b.Source = value
 	}
@@ -2097,6 +2104,9 @@ func (b *BlockSubFigure) ExecuteAfterBlockStarts(line *LineStruct) {
 	}
 	if value, ok := options["width"]; ok {
 		b.Width = value
+	}
+	if value, ok := options["background"]; ok {
+		b.Background = value
 	}
 	b.ContentStart = Pair[int, int]{
 		i: line.LineIndex,

@@ -332,6 +332,9 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 			if tree.Value.(*BlockSubFigure).Padding == "" {
 				tree.Value.(*BlockSubFigure).Padding = tree.Parent.Value.(*BlockFigure).Padding
 			}
+			if tree.Value.(*BlockSubFigure).Background == "" {
+				tree.Value.(*BlockSubFigure).Background = tree.Parent.Value.(*BlockFigure).Background
+			}
 		case reflect.TypeOf(&BlockMeta{}):
 			if mdMeta.Author != "" && tree.Value.(*BlockMeta).Author != "" {
 				log.Warnf("Overwriting meta-author (from %v to %v)\n", mdMeta.Author, tree.Value.(*BlockMeta).Author)

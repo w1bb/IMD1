@@ -372,13 +372,16 @@ func (b *BlockSubFigure) GenerateHTMLTagPrefix() string {
 		"<img src=\"%v\"",
 		b.Source,
 	)
-	if b.Padding != "" || b.Width != "" {
+	if b.Padding != "" || b.Width != "" || b.Background != "" {
 		imgTag += " style=\""
 		if b.Padding != "" {
 			imgTag += fmt.Sprintf("padding: %v;", b.Padding)
 		}
 		if b.Width != "" {
 			imgTag += fmt.Sprintf("width: %v;", b.Width)
+		}
+		if b.Background != "" {
+			imgTag += fmt.Sprintf("background: %v;", b.Background)
 		}
 		imgTag += "\">"
 	} else {
