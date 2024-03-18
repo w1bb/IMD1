@@ -493,6 +493,7 @@ func ParseTable(t *Tree[BlockInterface]) {
 	ParseTableFormat(t.Value.(*BlockTable))
 	parsedFormat := t.Value.(*BlockTable).ParsedFormat
 	treeTableRows := make([]*Tree[BlockInterface], 0)
+	separatorLength := 0
 	for paragraphI := 0; paragraphI < len(t.Children); paragraphI++ {
 		treeTableRow := &Tree[BlockInterface]{
 			Parent: t,
@@ -587,8 +588,20 @@ func ParseTable(t *Tree[BlockInterface]) {
 			treeTableRow.Value.(*BlockTableRow).IsSeparator = true
 		} else {
 			treeTableRow.Children = append(treeTableRow.Children, currentCell)
+			if len(treeTableRow.Children) > separatorLength {
+				separatorLength = len(treeTableRow.Children)
+			}
 		}
 		treeTableRows = append(treeTableRows, treeTableRow)
+	}
+	for pfi := 0; pfi < len(parsedFormat); pfi++ {
+		separatorLength += int(parsedFormat[pfi].LeftSeparators)
+		separatorLength += int(parsedFormat[pfi].RightSeparators)
+	}
+	for treeTableRowsI := 0; treeTableRowsI < len(treeTableRows); treeTableRowsI++ {
+		if treeTableRows[treeTableRowsI].Value.(*BlockTableRow).IsSeparator {
+			treeTableRows[treeTableRowsI].Value.(*BlockTableRow).SeparatorLength = separatorLength
+		}
 	}
 	t.Children = treeTableRows
 }

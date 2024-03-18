@@ -104,11 +104,11 @@ func (b *BlockHeading) GenerateHTMLTagSuffix() string {
 // Table HTML interface
 
 func (b *BlockTable) GenerateHTMLTagPrefix() string {
-	return "<table>"
+	return "<table><tbody>\n"
 }
 
 func (b *BlockTable) GenerateHTMLTagSuffix() string {
-	return "</table>\n"
+	return "</tbody></table>\n"
 }
 
 // =====================================
@@ -116,9 +116,14 @@ func (b *BlockTable) GenerateHTMLTagSuffix() string {
 
 func (b *BlockTableRow) GenerateHTMLTagPrefix() string {
 	if b.IsSeparator {
-		return "<tr class=\"tr-separator\">"
+		res := strings.Builder{}
+		res.WriteString("<tr class=\"tr-separator\">\n")
+		for i := 0; i < b.SeparatorLength; i++ {
+			res.WriteString("<td class=\"td-blank\"></td>")
+		}
+		return res.String()
 	} else {
-		return "<tr>"
+		return "<tr>\n"
 	}
 }
 
@@ -132,7 +137,7 @@ func (b *BlockTableRow) GenerateHTMLTagSuffix() string {
 func (b *BlockTableRowCell) GenerateHTMLTagPrefix() string {
 	res := strings.Builder{}
 	for i := int8(0); i < b.ParsedFormat.LeftSeparators; i++ {
-		res.WriteString("<td class=\"td-separator\"></td>")
+		res.WriteString("<td class=\"td-separator\"></td>\n")
 	}
 	res.WriteString("<td class=\"td-content\" style=\"text-align: ")
 	switch b.ParsedFormat.ColAlign {
@@ -143,15 +148,17 @@ func (b *BlockTableRowCell) GenerateHTMLTagPrefix() string {
 	case BlockTableColFormatAlign_Right:
 		res.WriteString("right")
 	}
-	res.WriteString("\"></td>")
-	for i := int8(0); i < b.ParsedFormat.RightSeparators; i++ {
-		res.WriteString("<td class=\"td-separator\"></td>")
-	}
+	res.WriteString("\">")
 	return res.String()
 }
 
 func (b *BlockTableRowCell) GenerateHTMLTagSuffix() string {
-	return ""
+	res := strings.Builder{}
+	res.WriteString("</td>\n")
+	for i := int8(0); i < b.ParsedFormat.RightSeparators; i++ {
+		res.WriteString("<td class=\"td-separator\"></td>\n")
+	}
+	return res.String()
 }
 
 // =====================================

@@ -1,0 +1,15 @@
+
+<style>
+    table {
+        border-collapse: collapse;
+    }
+    table tbody tr td.td-separator {
+        width: 5px;
+        background: red;
+    }
+    table tbody tr.tr-separator {
+        height: 5px;
+        background: orange;
+        width: 100%;
+    }
+</style>

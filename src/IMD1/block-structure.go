@@ -493,7 +493,8 @@ func (b *BlockTable) GetRawContent() *string {
 // inserted (except InlineBlock and Paragraph)
 
 type BlockTableRow struct {
-	IsSeparator bool
+	IsSeparator     bool
+	SeparatorLength int
 }
 
 func (b *BlockTableRow) String() string {
