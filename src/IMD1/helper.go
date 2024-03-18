@@ -41,7 +41,11 @@ func SetupLog(lvl log.Level) {
 
 func RemoveExcessSpaces(s string) string {
 	re := regexp.MustCompile(`\s+`)
-	return strings.TrimSpace(re.ReplaceAllString(s, " "))
+	s = strings.TrimSpace(re.ReplaceAllString(s, " "))
+	if s == " " {
+		return ""
+	}
+	return s
 }
 
 // - - - - -

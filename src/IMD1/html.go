@@ -101,6 +101,60 @@ func (b *BlockHeading) GenerateHTMLTagSuffix() string {
 }
 
 // =====================================
+// Table HTML interface
+
+func (b *BlockTable) GenerateHTMLTagPrefix() string {
+	return "<table>"
+}
+
+func (b *BlockTable) GenerateHTMLTagSuffix() string {
+	return "</table>\n"
+}
+
+// =====================================
+// Table row HTML interface
+
+func (b *BlockTableRow) GenerateHTMLTagPrefix() string {
+	if b.IsSeparator {
+		return "<tr class=\"tr-separator\">"
+	} else {
+		return "<tr>"
+	}
+}
+
+func (b *BlockTableRow) GenerateHTMLTagSuffix() string {
+	return "</tr>\n"
+}
+
+// =====================================
+// Table cell HTML interface
+
+func (b *BlockTableRowCell) GenerateHTMLTagPrefix() string {
+	res := strings.Builder{}
+	for i := int8(0); i < b.ParsedFormat.LeftSeparators; i++ {
+		res.WriteString("<td class=\"td-separator\"></td>")
+	}
+	res.WriteString("<td class=\"td-content\" style=\"text-align: ")
+	switch b.ParsedFormat.ColAlign {
+	case BlockTableColFormatAlign_Left:
+		res.WriteString("left")
+	case BlockTableColFormatAlign_Center:
+		res.WriteString("center")
+	case BlockTableColFormatAlign_Right:
+		res.WriteString("right")
+	}
+	res.WriteString("\"></td>")
+	for i := int8(0); i < b.ParsedFormat.RightSeparators; i++ {
+		res.WriteString("<td class=\"td-separator\"></td>")
+	}
+	return res.String()
+}
+
+func (b *BlockTableRowCell) GenerateHTMLTagSuffix() string {
+	return ""
+}
+
+// =====================================
 // TextBox HTML interface
 
 func (b *BlockTextBox) GenerateHTMLTagPrefix() string {

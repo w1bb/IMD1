@@ -94,6 +94,39 @@ func (b *BlockHeading) GenerateLaTeXTagSuffix() string {
 }
 
 // =====================================
+// Table LaTeX interface
+
+func (b *BlockTable) GenerateLaTeXTagPrefix() string {
+	return "{" // TODO
+}
+
+func (b *BlockTable) GenerateLaTeXTagSuffix() string {
+	return "}"
+}
+
+// =====================================
+// Table row LaTeX interface
+
+func (b *BlockTableRow) GenerateLaTeXTagPrefix() string {
+	return "{" // TODO
+}
+
+func (b *BlockTableRow) GenerateLaTeXTagSuffix() string {
+	return "}"
+}
+
+// =====================================
+// Table cell LaTeX interface
+
+func (b *BlockTableRowCell) GenerateLaTeXTagPrefix() string {
+	return "{" // TODO
+}
+
+func (b *BlockTableRowCell) GenerateLaTeXTagSuffix() string {
+	return "}"
+}
+
+// =====================================
 // TextBox LaTeX interface
 
 func (b *BlockTextBox) GenerateLaTeXTagPrefix() string {

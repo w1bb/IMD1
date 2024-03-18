@@ -158,6 +158,7 @@ func (b *BlockDocument) GetBlocksAllowedInside() []BlockInterface {
 		&BlockMath{},
 		&BlockInlineMath{},
 		&BlockTextBox{},
+		&BlockTable{},
 		&BlockFigure{},
 		&BlockUl{},
 		&BlockOl{},
@@ -353,6 +354,274 @@ func (b *BlockHeading) GetBlockStruct() *BlockStruct {
 }
 
 func (b *BlockHeading) GetRawContent() *string {
+	return nil
+}
+
+// =====================================
+// Tables
+
+type BlockTableColFormatAlign uint8
+
+const (
+	BlockTableColFormatAlign_Left BlockTableColFormatAlign = iota
+	BlockTableColFormatAlign_Center
+	BlockTableColFormatAlign_Right
+)
+
+func (t BlockTableColFormatAlign) String() string {
+	switch t {
+	case BlockTableColFormatAlign_Left:
+		return "Left"
+	case BlockTableColFormatAlign_Center:
+		return "Center"
+	case BlockTableColFormatAlign_Right:
+		return "Right"
+	default:
+		panic(nil) // This should never be reached
+	}
+}
+
+type BlockTableCellFormat struct {
+	ColAlign        BlockTableColFormatAlign
+	LeftSeparators  int8
+	RightSeparators int8
+}
+
+func (b *BlockTableCellFormat) String() string {
+	return fmt.Sprintf(
+		"BlockTableCellFormat (col-align: %v, left-sep: %v, right-sep: %v)",
+		b.ColAlign.String(),
+		b.LeftSeparators,
+		b.RightSeparators,
+	)
+}
+
+type BlockTable struct {
+	BlockStruct
+	Format       string
+	ParsedFormat []BlockTableCellFormat
+}
+
+func (b *BlockTable) String() string {
+	return fmt.Sprintf(
+		"BlockTable (format=%v => %v), %v",
+		b.Format,
+		b.ParsedFormat,
+		b.BlockStruct.String(),
+	)
+}
+
+func (b *BlockTable) CheckBlockStarts(line LineStruct) bool {
+	return CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "|table>")
+}
+
+func (b *BlockTable) SeekBufferAfterBlockStarts() int {
+	return 1
+}
+
+func (b *BlockTable) ExecuteAfterBlockStarts(line *LineStruct) {
+	b.Start = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ - 7,
+	}
+	options := GatherBlockOptions(line, []string{"format"})
+	if value, ok := options["format"]; ok {
+		b.Format = value
+	}
+	b.ContentStart = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+}
+
+func (b *BlockTable) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	bed.EndNormally = CheckRunesEndWithUnescapedASCII(line.RuneContent[:line.RuneJ+1], "<table|")
+	bed.EndViaNLI = false
+}
+
+func (b *BlockTable) ExecuteAfterBlockEnds(line *LineStruct) {
+	b.End = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ,
+	}
+	b.ContentEnd = Pair[int, int]{
+		i: line.LineIndex,
+		j: line.RuneJ - 7,
+	}
+}
+
+func (b *BlockTable) SeekBufferAfterBlockEnds() int {
+	return 1
+}
+
+func (b *BlockTable) GetBlocksAllowedInside() []BlockInterface {
+	return []BlockInterface{
+		&BlockComment{},
+		&BlockHTML{},
+		&BlockLaTeX{},
+		&BlockInlineMath{},
+		&BlockInlineCodeListing{},
+		&BlockFootnote{},
+		&BlockRef{},
+	}
+}
+
+func (b *BlockTable) AcceptBlockInside(_ BlockInterface) bool {
+	return true
+}
+
+func (b *BlockTable) IsPartOfParagraph() bool {
+	return false
+}
+
+func (b *BlockTable) DigDeeperForParagraphs() bool {
+	return true
+}
+
+func (b *BlockTable) GetBlockStruct() *BlockStruct {
+	return &b.BlockStruct
+}
+
+func (b *BlockTable) GetRawContent() *string {
+	return nil
+}
+
+// =====================================
+// Table rows
+
+// Please note that the rows are inserted only once everything else has been
+// inserted (except InlineBlock and Paragraph)
+
+type BlockTableRow struct {
+	IsSeparator bool
+}
+
+func (b *BlockTableRow) String() string {
+	return fmt.Sprintf(
+		"BlockTableRow (is-separator: %v)",
+		b.IsSeparator,
+	)
+}
+
+func (b *BlockTableRow) CheckBlockStarts(_ LineStruct) bool {
+	return false // irrelevant
+}
+
+func (b *BlockTableRow) SeekBufferAfterBlockStarts() int {
+	return 0 // irrelevant
+}
+
+func (b *BlockTableRow) ExecuteAfterBlockStarts(_ *LineStruct) {
+	// irrelevant
+}
+
+func (b *BlockTableRow) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	// irrelevant
+	bed.EndNormally = false
+	bed.EndViaNLI = false
+}
+
+func (b *BlockTableRow) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
+	return false // irrelevant
+}
+
+func (b *BlockTableRow) ExecuteAfterBlockEnds(_ *LineStruct) {
+	// irrelevant
+}
+
+func (b *BlockTableRow) SeekBufferAfterBlockEnds() int {
+	return 0 // irrelevant
+}
+
+func (b *BlockTableRow) GetBlocksAllowedInside() []BlockInterface {
+	return nil // irrelevant
+}
+
+func (b *BlockTableRow) AcceptBlockInside(_ BlockInterface) bool {
+	return false // irrelevant
+}
+
+func (b *BlockTableRow) IsPartOfParagraph() bool {
+	return false // irrelevant
+}
+
+func (b *BlockTableRow) DigDeeperForParagraphs() bool {
+	return true
+}
+
+func (b *BlockTableRow) GetBlockStruct() *BlockStruct {
+	return nil
+}
+
+func (b *BlockTableRow) GetRawContent() *string {
+	return nil
+}
+
+// =====================================
+// Table cell
+
+type BlockTableRowCell struct {
+	ParsedFormat BlockTableCellFormat
+}
+
+func (b *BlockTableRowCell) String() string {
+	return fmt.Sprintf(
+		"BlockTableRowCell (parsed-format: %v)",
+		b.ParsedFormat,
+	)
+}
+
+func (b *BlockTableRowCell) CheckBlockStarts(_ LineStruct) bool {
+	return false // irrelevant
+}
+
+func (b *BlockTableRowCell) SeekBufferAfterBlockStarts() int {
+	return 0 // irrelevant
+}
+
+func (b *BlockTableRowCell) ExecuteAfterBlockStarts(_ *LineStruct) {
+	// irrelevant
+}
+
+func (b *BlockTableRowCell) CheckBlockEnds(line *LineStruct, bed *BlockEndDetails, NewLines int, Indentation uint16, parsingStack ParsingStack) {
+	// irrelevant
+	bed.EndNormally = false
+	bed.EndViaNLI = false
+}
+
+func (b *BlockTableRowCell) CheckBlockEndsViaNewLinesAndIndentation(_ int, _ uint16) bool {
+	return false // irrelevant
+}
+
+func (b *BlockTableRowCell) ExecuteAfterBlockEnds(_ *LineStruct) {
+	// irrelevant
+}
+
+func (b *BlockTableRowCell) SeekBufferAfterBlockEnds() int {
+	return 0 // irrelevant
+}
+
+func (b *BlockTableRowCell) GetBlocksAllowedInside() []BlockInterface {
+	return nil // irrelevant
+}
+
+func (b *BlockTableRowCell) AcceptBlockInside(_ BlockInterface) bool {
+	return false // irrelevant
+}
+
+func (b *BlockTableRowCell) IsPartOfParagraph() bool {
+	return false // irrelevant
+}
+
+func (b *BlockTableRowCell) DigDeeperForParagraphs() bool {
+	return true
+}
+
+func (b *BlockTableRowCell) GetBlockStruct() *BlockStruct {
+	return nil
+}
+
+func (b *BlockTableRowCell) GetRawContent() *string {
 	return nil
 }
 
@@ -599,6 +868,7 @@ func (b *BlockTextBoxContent) GetBlocksAllowedInside() []BlockInterface {
 		&BlockMath{},
 		&BlockInlineMath{},
 		&BlockTextBox{},
+		&BlockTable{},
 		&BlockFigure{},
 		&BlockUl{},
 		&BlockOl{},
@@ -1661,6 +1931,7 @@ func (b *BlockUlLi) GetBlocksAllowedInside() []BlockInterface {
 		&BlockMath{},
 		&BlockInlineMath{},
 		&BlockTextBox{},
+		&BlockTable{},
 		&BlockFigure{},
 		&BlockUl{},
 		&BlockOl{},
@@ -1913,6 +2184,7 @@ func (b *BlockOlLi) GetBlocksAllowedInside() []BlockInterface {
 		&BlockMath{},
 		&BlockInlineMath{},
 		&BlockTextBox{},
+		&BlockTable{},
 		&BlockFigure{},
 		&BlockUl{},
 		&BlockOl{},
@@ -2328,6 +2600,7 @@ func (b *BlockTabsTab) GetBlocksAllowedInside() []BlockInterface {
 		&BlockLaTeX{},
 		&BlockTabs{},
 		&BlockTextBox{},
+		&BlockTable{},
 		&BlockCodeListing{},
 		&BlockInlineCodeListing{},
 		&BlockMath{},

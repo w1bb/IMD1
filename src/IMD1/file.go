@@ -110,3 +110,46 @@ func (file *FileStruct) GetStringBetween(start Pair[int, int], end Pair[int, int
 	}
 	return s
 }
+
+func (file *FileStruct) GetNonEmptyTrimmedRowsBetween(start Pair[int, int], end Pair[int, int]) []Pair[string, Pair[Pair[int, int], Pair[int, int]]] {
+	if len(file.Lines) <= start.i {
+		return nil
+	}
+	result := make([]Pair[string, Pair[Pair[int, int], Pair[int, int]]], 0)
+	s := ""
+	currentStart := start
+	for start.i < end.i || (start.i == end.i && start.j < end.j) {
+		if start.j >= len(file.Lines[start.i].RuneContent) {
+			s = RemoveExcessSpaces(s)
+			if len(s) > 0 {
+				start.j--
+				result = append(result, Pair[string, Pair[Pair[int, int], Pair[int, int]]]{
+					i: s,
+					j: Pair[Pair[int, int], Pair[int, int]]{
+						i: currentStart,
+						j: start,
+					},
+				})
+				s = ""
+			}
+			start.i++
+			start.j = 0
+			currentStart = start
+		} else {
+			s += string(file.Lines[start.i].RuneContent[start.j])
+			start.j++
+		}
+	}
+	if len(s) > 0 {
+		start.j--
+		result = append(result, Pair[string, Pair[Pair[int, int], Pair[int, int]]]{
+			i: s,
+			j: Pair[Pair[int, int], Pair[int, int]]{
+				i: currentStart,
+				j: start,
+			},
+		})
+		s = ""
+	}
+	return result
+}

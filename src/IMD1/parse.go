@@ -194,7 +194,7 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 	}
 
 	// Create the number of detected paragraphs
-	DetectParagraphs := func(before, after Pair[int, int], file *FileStruct) []BlockParagraph {
+	DetectParagraphs := func(before, after Pair[int, int], file *FileStruct, separateEveryLine bool) []BlockParagraph {
 		var paragraphs []BlockParagraph
 		var currentParagraph string
 
@@ -208,15 +208,15 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 				maxJ = after.j
 			}
 			currentParagraph += string(file.Lines[i].RuneContent[j:maxJ]) + " "
-			if file.Lines[i].Empty() || i == after.i {
+			if separateEveryLine || file.Lines[i].Empty() || i == after.i {
 				currentParagraph = RemoveExcessSpaces(currentParagraph)
-				if currentParagraph != "" {
+				if len(currentParagraph) > 0 {
 					end := Pair[int, int]{
 						i: i,
 						j: 0, // Default
 					}
-					if i == after.i {
-						end.j = after.j
+					if separateEveryLine || i == after.i {
+						end.j = maxJ
 					}
 					paragraphs = append(paragraphs, BlockParagraph{
 						BlockStruct: BlockStruct{
@@ -253,7 +253,9 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 		for i := FirstNonParagraph(tree, 0); i != -1; i = FirstNonParagraph(tree, startingI) {
 			after = tree.Children[i].Value.GetBlockStruct().Start
 			nextBefore := tree.Children[i].Value.GetBlockStruct().End
-			if p := DetectParagraphs(before, after, file); p != nil {
+			log.Debug("(", reflect.TypeOf(tree.Value), ") Searching for paragraph between ", before, " and ", after)
+			separateEveryLine := reflect.TypeOf(tree.Value) == reflect.TypeOf(&BlockTable{})
+			if p := DetectParagraphs(before, after, file, separateEveryLine); p != nil {
 				log.Debug("Detected paragraph between ", before, " and ", after, ": ", p)
 				generatedP := make([]*Tree[BlockInterface], len(p))
 				for j := range p {
@@ -280,7 +282,9 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 		}
 
 		after = tree.Value.GetBlockStruct().ContentEnd
-		if p := DetectParagraphs(before, after, file); p != nil {
+		log.Debug("(", reflect.TypeOf(tree.Value), ") Searching for paragraph between ", before, " and ", after)
+		separateEveryLine := reflect.TypeOf(tree.Value) == reflect.TypeOf(&BlockTable{})
+		if p := DetectParagraphs(before, after, file, separateEveryLine); p != nil {
 			log.Debug("Detected paragraph between ", before, " and ", after, ": ", p)
 			generatedP := make([]*Tree[BlockInterface], len(p))
 			for j := range p {
@@ -315,6 +319,7 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 	RefBlocks := make([]*BlockRef, 0)
 	BibliographyBlocks := make([]*BlockBibliography, 0)
 	TabsBlocks := make([]*BlockTabs, 0)
+	TableBlocks := make([]*Tree[BlockInterface], 0)
 	DFSNodeParse = func(tree *Tree[BlockInterface]) {
 		if rc := tree.Value.GetRawContent(); rc != nil && *rc == "" {
 			bs := tree.Value.GetBlockStruct()
@@ -400,6 +405,8 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 		case reflect.TypeOf(&BlockTabs{}):
 			tabs := tree.Value.(*BlockTabs)
 			TabsBlocks = append(TabsBlocks, tabs)
+		case reflect.TypeOf(&BlockTable{}):
+			TableBlocks = append(TableBlocks, tree)
 		}
 
 		for i := 0; i < len(tree.Children); i++ {
@@ -440,7 +447,150 @@ func (file *FileStruct) Parse() (Tree[BlockInterface], MDMetaStructure) {
 		TabsBlocks[i].Tabs[TabsBlocks[i].SelectedIndex].IsSelected = true
 	}
 
+	// Generate tables
+	for tableI := 0; tableI < len(TableBlocks); tableI++ {
+		ParseTable(TableBlocks[tableI])
+	}
+
 	return *currentBlock, mdMeta
+}
+
+// =====================================
+// Table parse
+
+func ParseTableFormat(t *BlockTable) {
+	currentCell := BlockTableCellFormat{}
+	isFirstCell := true
+	for _, c := range t.Format {
+		if c == '|' {
+			if isFirstCell {
+				currentCell.LeftSeparators++
+			} else {
+				currentCell.RightSeparators++
+			}
+		} else {
+			if !isFirstCell {
+				t.ParsedFormat = append(t.ParsedFormat, currentCell)
+				currentCell = BlockTableCellFormat{}
+			}
+			switch c {
+			case 'l', 'L':
+				currentCell.ColAlign = BlockTableColFormatAlign_Left
+			case 'c', 'C':
+				currentCell.ColAlign = BlockTableColFormatAlign_Center
+			case 'r', 'R':
+				currentCell.ColAlign = BlockTableColFormatAlign_Right
+			default:
+				log.Warnf("Unknown table format option: %v", c)
+			}
+			isFirstCell = false
+		}
+	}
+	t.ParsedFormat = append(t.ParsedFormat, currentCell)
+}
+
+func ParseTable(t *Tree[BlockInterface]) {
+	ParseTableFormat(t.Value.(*BlockTable))
+	parsedFormat := t.Value.(*BlockTable).ParsedFormat
+	treeTableRows := make([]*Tree[BlockInterface], 0)
+	for paragraphI := 0; paragraphI < len(t.Children); paragraphI++ {
+		treeTableRow := &Tree[BlockInterface]{
+			Parent: t,
+			Value:  new(BlockTableRow),
+		}
+		paragraphInlineDocument := t.Children[paragraphI].Children[0]
+		// Sanity check 1
+		if reflect.TypeOf(paragraphInlineDocument.Value) != reflect.TypeOf(&BlockInline{}) {
+			log.Error(reflect.TypeOf(paragraphInlineDocument.Value), " vs ", reflect.TypeOf(&BlockInline{}))
+			panic(nil)
+		}
+		// Sanity check 2
+		if reflect.TypeOf(paragraphInlineDocument.Value.(*BlockInline).Content) != reflect.TypeOf(&InlineDocument{}) {
+			log.Error(reflect.TypeOf(paragraphInlineDocument.Value.(*BlockInline).Content), " vs ", reflect.TypeOf(&InlineDocument{}))
+			panic(nil)
+		}
+		// Search for @ as separator
+		currentCellI := -1
+		createNewCell := func() *Tree[BlockInterface] {
+			currentCellI++
+			currentCell := &Tree[BlockInterface]{
+				Parent: t,
+				Value:  new(BlockTableRowCell),
+				Children: []*Tree[BlockInterface]{
+					&Tree[BlockInterface]{
+						Parent: t,
+						Value: &BlockInline{
+							Content: new(InlineDocument),
+						},
+						Children: make([]*Tree[BlockInterface], 0),
+					},
+				},
+			}
+			if currentCellI < len(parsedFormat) {
+				currentCell.Value.(*BlockTableRowCell).ParsedFormat = parsedFormat[currentCellI]
+			} else {
+				currentCell.Value.(*BlockTableRowCell).ParsedFormat = BlockTableCellFormat{}
+			}
+			return currentCell
+		}
+		currentCell := createNewCell()
+		for i := 0; i < len(paragraphInlineDocument.Children); i++ {
+			if reflect.TypeOf(paragraphInlineDocument.Children[i].Value) == reflect.TypeOf(&BlockInline{}) &&
+				reflect.TypeOf(paragraphInlineDocument.Children[i].Value.(*BlockInline).Content) == reflect.TypeOf(&InlineRawString{}) {
+				rs := paragraphInlineDocument.Children[i].Value.(*BlockInline).Content.(*InlineRawString)
+				sBuilder := strings.Builder{}
+				for _, c := range rs.Content {
+					if c == '@' { // Todo - allow escaping '@'
+						if sBuilder.Len() > 0 {
+							newRs := &Tree[BlockInterface]{
+								Parent: currentCell.Children[0],
+								Value: &BlockInline{
+									Content: &InlineRawString{
+										Content: sBuilder.String(),
+									},
+								},
+								Children: make([]*Tree[BlockInterface], 0),
+							}
+							newRs.Parent = currentCell.Children[0]
+							currentCell.Children[0].Children = append(currentCell.Children[0].Children, newRs)
+						}
+						treeTableRow.Children = append(treeTableRow.Children, currentCell)
+						currentCell = createNewCell()
+						sBuilder.Reset()
+					} else {
+						sBuilder.WriteRune(c)
+					}
+				}
+				if sBuilder.Len() > 0 {
+					newRs := &Tree[BlockInterface]{
+						Parent: currentCell.Children[0],
+						Value: &BlockInline{
+							Content: &InlineRawString{
+								Content: sBuilder.String(),
+							},
+						},
+						Children: make([]*Tree[BlockInterface], 0),
+					}
+					newRs.Parent = currentCell.Children[0]
+					currentCell.Children[0].Children = append(currentCell.Children[0].Children, newRs)
+				}
+			} else {
+				paragraphInlineDocument.Children[i].Parent = currentCell.Children[0]
+				currentCell.Children[0].Children = append(currentCell.Children[0].Children, paragraphInlineDocument.Children[i])
+			}
+		}
+		if len(treeTableRow.Children) == 0 &&
+			len(currentCell.Children[0].Children) == 1 &&
+			reflect.TypeOf(currentCell.Children[0].Children[0].Value) == reflect.TypeOf(&BlockInline{}) &&
+			reflect.TypeOf(currentCell.Children[0].Children[0].Value.(*BlockInline).Content) == reflect.TypeOf(&InlineRawString{}) &&
+			strings.TrimSpace(currentCell.Children[0].Children[0].Value.(*BlockInline).Content.(*InlineRawString).Content) == "---" {
+			treeTableRow.Value.(*BlockTableRow).IsSeparator = true
+		} else {
+			treeTableRow.Children = append(treeTableRow.Children, currentCell)
+		}
+		treeTableRows = append(treeTableRows, treeTableRow)
+	}
+	t.Children = treeTableRows
 }
 
 // =====================================
