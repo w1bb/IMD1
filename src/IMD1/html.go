@@ -227,7 +227,7 @@ func (b *BlockCodeListing) GenerateHTMLTagPrefix() string {
 		"%v<code class=\"language-%v\">%v",
 		r,
 		b.Language,
-		strings.TrimSpace(b.RawContent),
+		StringToHTMLSafe(strings.TrimSpace(b.RawContent)),
 	)
 }
 
@@ -239,7 +239,7 @@ func (b *BlockCodeListing) GenerateHTMLTagSuffix() string {
 // Comment HTML interface
 
 func (b *BlockComment) GenerateHTMLTagPrefix() string {
-	return "<!--" + b.RawContent + "-->"
+	return "<!--" + StringToHTMLSafe(b.RawContent) + "-->"
 }
 
 func (b *BlockComment) GenerateHTMLTagSuffix() string {
